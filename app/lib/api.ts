@@ -1,4 +1,36 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Mock Credentials Database
+const MOCK_USERS: Array<{ email: string; password: string; user: User }> = [
+  {
+    email: 'admin@icare.edu',
+    password: 'admin123',
+    user: {
+      id: 'admin-001',
+      email: 'admin@icare.edu',
+      name: 'Dr. Maria Santos',
+      role: 'admin',
+    },
+  },
+  {
+    email: 'student@icare.edu',
+    password: 'student123',
+    user: {
+      id: 'student-001',
+      email: 'student@icare.edu',
+      name: 'Maria Cruz',
+      role: 'student',
+    },
+  },
+  {
+    email: 'faculty@icare.edu',
+    password: 'faculty123',
+    user: {
+      id: 'faculty-001',
+      email: 'faculty@icare.edu',
+      name: 'Dr. Juan Dela Cruz',
+      role: 'faculty',
+    },
+  },
+];
 
 export interface User {
   id: string;
@@ -54,47 +86,240 @@ export interface PerformanceLog {
   created_at: string;
 }
 
+// Mock Data Generators
+const generateMockPatients = (): Patient[] => [
+  {
+    id: 'patient-001',
+    name: 'Juan Reyes',
+    age: 68,
+    gender: 'M',
+    room_number: 'Room 101',
+    diagnosis: 'Acute Myocardial Infarction',
+    vital_signs: {
+      heart_rate: 98,
+      blood_pressure: '140/90',
+      temperature: 37.2,
+      respiratory_rate: 20,
+      oxygen_saturation: 96,
+    },
+    created_by: 'student-001',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'patient-002',
+    name: 'Maria Santos',
+    age: 45,
+    gender: 'F',
+    room_number: 'Room 102',
+    diagnosis: 'Type 2 Diabetes',
+    vital_signs: {
+      heart_rate: 72,
+      blood_pressure: '120/80',
+      temperature: 37.0,
+      respiratory_rate: 16,
+      oxygen_saturation: 98,
+    },
+    created_by: 'student-001',
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'patient-003',
+    name: 'Carlos Diaz',
+    age: 55,
+    gender: 'M',
+    room_number: 'Room 103',
+    diagnosis: 'Hypertension',
+    vital_signs: {
+      heart_rate: 85,
+      blood_pressure: '150/95',
+      temperature: 36.8,
+      respiratory_rate: 18,
+      oxygen_saturation: 97,
+    },
+    created_by: 'student-001',
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+const generateMockQuizzes = (): Quiz[] => [
+  {
+    id: 'quiz-001',
+    title: 'Cardiac Assessment Basics',
+    description: 'Learn the fundamentals of cardiac patient assessment',
+    difficulty: 'beginner',
+    category: 'Cardiac Care',
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'quiz-002',
+    title: 'Diabetes Management',
+    description: 'Assessment of diabetes care protocols',
+    difficulty: 'intermediate',
+    category: 'Endocrinology',
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'quiz-003',
+    title: 'Hypertension Crisis Response',
+    description: 'Advanced management of hypertensive emergencies',
+    difficulty: 'advanced',
+    category: 'Emergency Care',
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'quiz-004',
+    title: 'Patient Communication Skills',
+    description: 'Effective communication with patients and families',
+    difficulty: 'beginner',
+    category: 'Soft Skills',
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+const generateMockQuestions = (quizId: string): Question[] => {
+  const questionMap: Record<string, Question[]> = {
+    'quiz-001': [
+      {
+        id: 'q-001-1',
+        quiz_id: 'quiz-001',
+        content: 'What is the normal resting heart rate for adults?',
+        options: ['40-60 bpm', '60-100 bpm', '100-120 bpm', '120-150 bpm'],
+        correct_answer: 1,
+        explanation: 'The normal resting heart rate for adults is typically between 60-100 beats per minute.',
+        competencies: ['Vital Signs', 'Cardiac Assessment'],
+      },
+      {
+        id: 'q-001-2',
+        quiz_id: 'quiz-001',
+        content: 'Which of the following indicates an abnormal heart rhythm?',
+        options: ['Regular pulse at 75 bpm', 'Irregular pulse with variations', 'Pulse at 90 bpm', 'All are normal'],
+        correct_answer: 1,
+        explanation: 'An irregular pulse with variations may indicate arrhythmia and requires further investigation.',
+        competencies: ['Cardiac Assessment', 'Clinical Judgment'],
+      },
+    ],
+    'quiz-002': [
+      {
+        id: 'q-002-1',
+        quiz_id: 'quiz-002',
+        content: 'What is the primary goal of diabetes management?',
+        options: [
+          'Eliminate insulin usage',
+          'Maintain blood glucose within target range',
+          'Increase dietary sugar intake',
+          'Reduce all medications',
+        ],
+        correct_answer: 1,
+        explanation: 'The primary goal is to maintain blood glucose levels within the target range to prevent complications.',
+        competencies: ['Diabetes Care', 'Patient Education'],
+      },
+    ],
+    'quiz-003': [
+      {
+        id: 'q-003-1',
+        quiz_id: 'quiz-003',
+        content: 'What is considered a hypertensive emergency?',
+        options: [
+          'BP > 140/90 mmHg',
+          'BP > 180/120 mmHg with end-organ damage',
+          'Any BP reading above baseline',
+          'BP that increases during stress',
+        ],
+        correct_answer: 1,
+        explanation: 'A hypertensive emergency is defined as BP > 180/120 mmHg accompanied by signs of end-organ damage.',
+        competencies: ['Emergency Response', 'Critical Thinking'],
+      },
+    ],
+    'quiz-004': [
+      {
+        id: 'q-004-1',
+        quiz_id: 'quiz-004',
+        content: 'How should you introduce yourself to a new patient?',
+        options: [
+          'State only your name',
+          'State your name, role, and purpose of your visit',
+          'Ask them questions immediately',
+          'Wait for them to speak first',
+        ],
+        correct_answer: 1,
+        explanation: 'Building rapport requires introducing yourself with your role to establish professional communication.',
+        competencies: ['Communication', 'Patient Relations'],
+      },
+    ],
+  };
+
+  return questionMap[quizId] || [];
+};
+
+const generateMockPerformanceLogs = (userId: string): PerformanceLog[] => [
+  {
+    id: 'perf-001',
+    user_id: userId,
+    quiz_id: 'quiz-001',
+    score: 85,
+    time_taken: 1200,
+    answers: [
+      { question_id: 'q-001-1', answer: 1, correct: true },
+      { question_id: 'q-001-2', answer: 1, correct: true },
+    ],
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'perf-002',
+    user_id: userId,
+    quiz_id: 'quiz-002',
+    score: 72,
+    time_taken: 1500,
+    answers: [
+      { question_id: 'q-002-1', answer: 1, correct: true },
+    ],
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'perf-003',
+    user_id: userId,
+    quiz_id: 'quiz-004',
+    score: 90,
+    time_taken: 900,
+    answers: [
+      { question_id: 'q-004-1', answer: 1, correct: true },
+    ],
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+// Authentication Functions
 export async function login(email: string, password: string): Promise<{ user: User; sessionToken: string } | null> {
-  try {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 300));
 
-    if (!response.ok) return null;
+  const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
+  if (!mockUser) return null;
 
-    const data = await response.json();
-    if (data.success) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('icare_user', JSON.stringify(data.user));
-        localStorage.setItem('icare_token', 'logged_in');
-      }
-      return { user: data.user, sessionToken: 'logged_in' };
-    }
-    return null;
-  } catch (error) {
-    console.error('Login error:', error);
-    return null;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('icare_user', JSON.stringify(mockUser.user));
+    localStorage.setItem('icare_token', 'logged_in');
   }
+  return { user: mockUser.user, sessionToken: 'logged_in' };
 }
 
 export async function register(email: string, password: string, name: string, role: string = 'student'): Promise<User | null> {
-  try {
-    const response = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, role }),
-    });
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 300));
 
-    if (!response.ok) return null;
+  // For mock, just create a new user object
+  const newUser: User = {
+    id: `${role}-${Date.now()}`,
+    email,
+    name,
+    role: role as 'student' | 'faculty' | 'admin',
+  };
 
-    const data = await response.json();
-    return data.success ? data.user : null;
-  } catch (error) {
-    console.error('Register error:', error);
-    return null;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('icare_user', JSON.stringify(newUser));
+    localStorage.setItem('icare_token', 'logged_in');
   }
+  return newUser;
 }
 
 export function logout(): void {
@@ -115,40 +340,20 @@ export function isAuthenticated(): boolean {
   return localStorage.getItem('icare_token') === 'logged_in';
 }
 
+// Student API Functions
 export async function fetchPatients(): Promise<Patient[]> {
-  try {
-    const response = await fetch(`${API_URL}/patients`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.patients || [];
-  } catch (error) {
-    console.error('Fetch patients error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return generateMockPatients();
 }
 
 export async function fetchQuizzes(): Promise<Quiz[]> {
-  try {
-    const response = await fetch(`${API_URL}/quizzes`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.quizzes || [];
-  } catch (error) {
-    console.error('Fetch quizzes error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return generateMockQuizzes();
 }
 
 export async function fetchQuizQuestions(quizId: string): Promise<Question[]> {
-  try {
-    const response = await fetch(`${API_URL}/quizzes/${quizId}/questions`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.questions || [];
-  } catch (error) {
-    console.error('Fetch questions error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 150));
+  return generateMockQuestions(quizId);
 }
 
 export async function submitPerformance(
@@ -158,30 +363,14 @@ export async function submitPerformance(
   timeTaken: number,
   answers: { question_id: string; answer: number; correct: boolean }[]
 ): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_URL}/performance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, quiz_id: quizId, score, time_taken: timeTaken, answers }),
-    });
-
-    return response.ok;
-  } catch (error) {
-    console.error('Submit performance error:', error);
-    return false;
-  }
+  await new Promise(resolve => setTimeout(resolve, 300));
+  // In a real app, this would save to a database
+  return true;
 }
 
 export async function fetchStudentPerformance(studentId: string): Promise<PerformanceLog[]> {
-  try {
-    const response = await fetch(`${API_URL}/performance/student/${studentId}`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.logs || [];
-  } catch (error) {
-    console.error('Fetch student performance error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return generateMockPerformanceLogs(studentId);
 }
 
 // Faculty API Types
@@ -332,323 +521,591 @@ export interface FacultyAnalytics {
   ml_insights: { type: string; message: string; priority: string }[];
 }
 
+// Mock Faculty Data
+const generateMockFacultyStudents = (): FacultyStudent[] => [
+  {
+    id: 'fs-001',
+    student_id: 'student-001',
+    name: 'Maria Cruz',
+    email: 'maria.cruz@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 82,
+    quiz_count: 12,
+    risk_level: 'low',
+    last_activity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'fs-002',
+    student_id: 'student-002',
+    name: 'Juan Reyes',
+    email: 'juan.reyes@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 65,
+    quiz_count: 8,
+    risk_level: 'high',
+    last_activity: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'fs-003',
+    student_id: 'student-003',
+    name: 'Anna Santos',
+    email: 'anna.santos@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 75,
+    quiz_count: 10,
+    risk_level: 'medium',
+    last_activity: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'fs-004',
+    student_id: 'student-004',
+    name: 'Carlos Diaz',
+    email: 'carlos.diaz@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 88,
+    quiz_count: 15,
+    risk_level: 'low',
+    last_activity: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 // Faculty API Functions
 export async function fetchFacultyDashboard(): Promise<{ stats: FacultyStats; recent_activities: AuditLog[] } | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/dashboard`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? { stats: data.stats, recent_activities: data.recent_activities } : null;
-  } catch (error) {
-    console.error('Fetch faculty dashboard error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  const stats: FacultyStats = {
+    total_students: 48,
+    at_risk_students: 8,
+    active_alerts: 5,
+    completed_reviews: 32,
+    active_scenarios: 12,
+    pending_scenarios: 4,
+  };
+
+  const recentActivities: AuditLog[] = [
+    {
+      id: 'audit-001',
+      action: 'Quiz Submitted',
+      details: 'Student completed Cardiac Assessment Basics',
+      user: 'Maria Cruz',
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-002',
+      action: 'Scenario Assigned',
+      details: 'Hypertension Crisis Response assigned to 5 students',
+      user: 'Dr. Juan Dela Cruz',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-003',
+      action: 'Alert Created',
+      details: 'At-risk alert for student Juan Reyes',
+      user: 'System',
+      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  return { stats, recent_activities: recentActivities };
 }
 
 export async function fetchFacultyStudents(riskLevel?: string, search?: string): Promise<FacultyStudent[]> {
-  try {
-    const params = new URLSearchParams();
-    if (riskLevel && riskLevel !== 'all') params.append('risk_level', riskLevel);
-    if (search) params.append('search', search);
-    
-    const response = await fetch(`${API_URL}/faculty/students?${params}`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.students : [];
-  } catch (error) {
-    console.error('Fetch faculty students error:', error);
-    return [];
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  let students = generateMockFacultyStudents();
+  
+  if (riskLevel && riskLevel !== 'all') {
+    students = students.filter(s => s.risk_level === riskLevel);
   }
+  
+  if (search) {
+    students = students.filter(s =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+  
+  return students;
 }
 
 export async function fetchFacultyStudentDetail(studentId: string): Promise<{ student: FacultyStudent; performance_history: any[]; competencies: Record<string, number> } | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/students/${studentId}`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data : null;
-  } catch (error) {
-    console.error('Fetch student detail error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 250));
+  
+  const students = generateMockFacultyStudents();
+  const student = students.find(s => s.student_id === studentId);
+  
+  if (!student) return null;
+
+  return {
+    student,
+    performance_history: generateMockPerformanceLogs(studentId),
+    competencies: {
+      'Cardiac Assessment': 85,
+      'Vital Signs': 90,
+      'Patient Communication': 88,
+      'Diabetes Care': 72,
+      'Emergency Response': 78,
+    },
+  };
 }
 
 export async function fetchAtRiskStudents(): Promise<FacultyStudent[]> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/at-risk`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.students : [];
-  } catch (error) {
-    console.error('Fetch at-risk students error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  const students = generateMockFacultyStudents();
+  return students.filter(s => s.risk_level === 'high' || s.risk_level === 'medium');
 }
 
 export async function fetchFacultyScenarios(): Promise<SimulationScenario[]> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/scenarios`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.scenarios : [];
-  } catch (error) {
-    console.error('Fetch scenarios error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'scenario-001',
+      title: 'Acute MI Response',
+      description: 'Manage a patient experiencing acute myocardial infarction',
+      difficulty: 'advanced',
+      category: 'Cardiac Emergency',
+      patient_case: { age: 68, condition: 'Acute MI', vitals: {} },
+      learning_objectives: [
+        'Recognize signs and symptoms of acute MI',
+        'Perform ECG interpretation',
+        'Administer appropriate interventions',
+      ],
+      is_ai_generated: false,
+      student_count: 12,
+      created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'scenario-002',
+      title: 'Diabetic Patient Education',
+      description: 'Educate a newly diagnosed diabetic patient',
+      difficulty: 'beginner',
+      category: 'Patient Education',
+      patient_case: { age: 45, condition: 'Type 2 Diabetes', vitals: {} },
+      learning_objectives: [
+        'Explain diabetes pathophysiology',
+        'Develop education plan',
+        'Assess patient understanding',
+      ],
+      is_ai_generated: true,
+      student_count: 8,
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
 }
 
 export async function createScenario(scenario: Partial<SimulationScenario>): Promise<SimulationScenario | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/scenarios`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(scenario),
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.scenario : null;
-  } catch (error) {
-    console.error('Create scenario error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  const newScenario: SimulationScenario = {
+    id: `scenario-${Date.now()}`,
+    title: scenario.title || 'New Scenario',
+    description: scenario.description || '',
+    difficulty: scenario.difficulty || 'intermediate',
+    category: scenario.category || 'General',
+    patient_case: scenario.patient_case || {},
+    learning_objectives: scenario.learning_objectives || [],
+    is_ai_generated: false,
+    student_count: 0,
+    created_at: new Date().toISOString(),
+  };
+  
+  return newScenario;
 }
 
 export async function generateAIScenario(prompt: string): Promise<SimulationScenario | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/scenarios/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.scenario : null;
-  } catch (error) {
-    console.error('Generate AI scenario error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  return {
+    id: `scenario-ai-${Date.now()}`,
+    title: 'AI Generated Scenario',
+    description: prompt,
+    difficulty: 'intermediate',
+    category: 'AI Generated',
+    patient_case: { generated_by_ai: true },
+    learning_objectives: ['Complete the scenario', 'Demonstrate clinical skills'],
+    is_ai_generated: true,
+    student_count: 0,
+    created_at: new Date().toISOString(),
+  };
 }
 
 export async function fetchFacultyPatients(): Promise<FacultyPatient[]> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/patients`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.patients : [];
-  } catch (error) {
-    console.error('Fetch patients error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'fpatient-001',
+      name: 'Juan Reyes',
+      age: 68,
+      gender: 'M',
+      room_number: 'Room 101',
+      diagnosis: 'Acute Myocardial Infarction',
+      admission_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      vital_signs: {
+        heart_rate: 98,
+        blood_pressure: '140/90',
+        temperature: 37.2,
+        respiratory_rate: 20,
+        oxygen_saturation: 96,
+      },
+      labs: { troponin: '2.5 ng/mL', creatinine: '1.1 mg/dL' },
+      mimic_id: 'mimic-001',
+    },
+    {
+      id: 'fpatient-002',
+      name: 'Maria Santos',
+      age: 45,
+      gender: 'F',
+      room_number: 'Room 102',
+      diagnosis: 'Type 2 Diabetes',
+      admission_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      vital_signs: {
+        heart_rate: 72,
+        blood_pressure: '120/80',
+        temperature: 37.0,
+        respiratory_rate: 16,
+        oxygen_saturation: 98,
+      },
+      labs: { glucose: '240 mg/dL', HbA1c: '8.2%' },
+      mimic_id: 'mimic-002',
+    },
+  ];
 }
 
 export async function fetchFacultyPatientDetail(patientId: string): Promise<{ patient: FacultyPatient; clinical_decision_support: any } | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/patients/${patientId}`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data : null;
-  } catch (error) {
-    console.error('Fetch patient detail error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const patients = await fetchFacultyPatients();
+  const patient = patients.find(p => p.id === patientId);
+  
+  if (!patient) return null;
+
+  return {
+    patient,
+    clinical_decision_support: {
+      recommendations: ['Monitor cardiac enzymes', 'Continue ECG monitoring', 'Administer antiplatelet therapy'],
+      warnings: ['High heart rate - potential arrhythmia', 'Elevated blood pressure'],
+    },
+  };
 }
 
 export async function fetchFacultyReports(): Promise<FacultyReport[]> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/reports`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.reports : [];
-  } catch (error) {
-    console.error('Fetch reports error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'report-001',
+      student_id: 'student-001',
+      student_name: 'Maria Cruz',
+      report_type: 'competency',
+      generated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      pdf_url: null,
+    },
+    {
+      id: 'report-002',
+      student_id: 'student-002',
+      student_name: 'Juan Reyes',
+      report_type: 'performance',
+      generated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      pdf_url: null,
+    },
+  ];
 }
 
 export async function generateFacultyReport(studentId: string, reportType: string = 'competency'): Promise<FacultyReport | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/reports`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_id: studentId, report_type: reportType }),
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.report : null;
-  } catch (error) {
-    console.error('Generate report error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  return {
+    id: `report-${Date.now()}`,
+    student_id: studentId,
+    student_name: 'Student Name',
+    report_type: reportType,
+    generated_at: new Date().toISOString(),
+    pdf_url: null,
+  };
 }
 
 export async function fetchFacultyNotifications(): Promise<{ notifications: FacultyNotification[]; total: number; unread: number } | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/notifications`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? { notifications: data.notifications, total: data.total, unread: data.unread } : null;
-  } catch (error) {
-    console.error('Fetch notifications error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const notifications: FacultyNotification[] = [
+    {
+      id: 'notif-001',
+      title: 'Student Quiz Submission',
+      message: 'Maria Cruz completed Cardiac Assessment Basics quiz',
+      type: 'info',
+      is_read: false,
+      created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      student_id: 'student-001',
+    },
+    {
+      id: 'notif-002',
+      title: 'At-Risk Alert',
+      message: 'Juan Reyes performance is declining',
+      type: 'warning',
+      is_read: false,
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      student_id: 'student-002',
+    },
+    {
+      id: 'notif-003',
+      title: 'Scenario Completion',
+      message: 'Anna Santos completed Diabetic Patient Education scenario',
+      type: 'success',
+      is_read: true,
+      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      student_id: 'student-003',
+    },
+  ];
+
+  return {
+    notifications,
+    total: notifications.length,
+    unread: notifications.filter(n => !n.is_read).length,
+  };
 }
 
 export async function markNotificationRead(notificationId: string): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/notifications/${notificationId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_read: true }),
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Mark notification read error:', error);
-    return false;
-  }
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return true;
 }
 
 export async function fetchFacultyAlerts(status?: string): Promise<{ alerts: FacultyAlert[]; total: number; pending: number } | null> {
-  try {
-    const params = status && status !== 'all' ? `?status=${status}` : '';
-    const response = await fetch(`${API_URL}/faculty/alerts${params}`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? { alerts: data.alerts, total: data.total, pending: data.pending } : null;
-  } catch (error) {
-    console.error('Fetch alerts error:', error);
-    return null;
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const alerts: FacultyAlert[] = [
+    {
+      id: 'alert-001',
+      student_id: 'student-002',
+      student_name: 'Juan Reyes',
+      alert_type: 'Low Performance',
+      severity: 'high',
+      description: 'Average score below 70%, requires intervention',
+      status: 'pending',
+      created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'alert-002',
+      student_id: 'student-003',
+      student_name: 'Anna Santos',
+      alert_type: 'Low Engagement',
+      severity: 'medium',
+      description: 'No activity in past 48 hours',
+      status: 'pending',
+      created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  let filtered = alerts;
+  if (status && status !== 'all') {
+    filtered = alerts.filter(a => a.status === status);
   }
+
+  return {
+    alerts: filtered,
+    total: alerts.length,
+    pending: alerts.filter(a => a.status === 'pending').length,
+  };
 }
 
 export async function updateAlertStatus(alertId: string, status: string): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/alerts/${alertId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Update alert error:', error);
-    return false;
-  }
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return true;
 }
 
 export async function createAlert(alert: Partial<FacultyAlert>): Promise<FacultyAlert | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/alerts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(alert),
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.alert : null;
-  } catch (error) {
-    console.error('Create alert error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return {
+    id: `alert-${Date.now()}`,
+    student_id: alert.student_id || '',
+    student_name: alert.student_name || '',
+    alert_type: alert.alert_type || 'Manual Alert',
+    severity: alert.severity || 'medium',
+    description: alert.description || '',
+    status: 'pending',
+    created_at: new Date().toISOString(),
+  };
 }
 
 export async function fetchAuditTrail(action?: string): Promise<AuditLog[]> {
-  try {
-    const params = action && action !== 'all' ? `?action=${action}` : '';
-    const response = await fetch(`${API_URL}/faculty/audit-trail${params}`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.audit_logs : [];
-  } catch (error) {
-    console.error('Fetch audit trail error:', error);
-    return [];
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const auditLogs: AuditLog[] = [
+    {
+      id: 'audit-001',
+      action: 'Login',
+      details: 'User logged in successfully',
+      user: 'Dr. Juan Dela Cruz',
+      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-002',
+      action: 'Quiz Submitted',
+      details: 'Submitted Cardiac Assessment Basics',
+      user: 'Maria Cruz',
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-003',
+      action: 'Report Generated',
+      details: 'Generated competency report for Juan Reyes',
+      user: 'Dr. Juan Dela Cruz',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  let filtered = auditLogs;
+  if (action && action !== 'all') {
+    filtered = auditLogs.filter(a => a.action === action);
   }
+
+  return filtered;
 }
 
 export async function fetchFacultyAnalytics(): Promise<FacultyAnalytics | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/analytics`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.analytics : null;
-  } catch (error) {
-    console.error('Fetch analytics error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return {
+    cohort_performance: {
+      average_score: 82,
+      total_quizzes: 240,
+      completion_rate: 85,
+      improvement_trend: 'up',
+    },
+    risk_distribution: {
+      low: 35,
+      medium: 8,
+      high: 5,
+    },
+    competency_breakdown: {
+      'Cardiac Assessment': 82,
+      'Vital Signs': 85,
+      'Patient Communication': 80,
+      'Diabetes Care': 72,
+      'Emergency Response': 78,
+    },
+    performance_trend: [
+      { week: 'Week 1', average: 78 },
+      { week: 'Week 2', average: 80 },
+      { week: 'Week 3', average: 82 },
+      { week: 'Week 4', average: 85 },
+    ],
+    ml_insights: [
+      { type: 'risk', message: 'Juan Reyes shows declining performance', priority: 'high' },
+      { type: 'opportunity', message: 'Carlos Diaz ready for advanced scenarios', priority: 'medium' },
+    ],
+  };
 }
 
 export async function predictStudentRisk(studentId: string): Promise<any | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/ml/predict-risk/${studentId}`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.prediction : null;
-  } catch (error) {
-    console.error('Predict student risk error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  return {
+    student_id: studentId,
+    risk_score: 0.65,
+    risk_level: 'medium',
+    factors: ['Lower average scores', 'Decreased engagement', 'Inconsistent performance'],
+    recommendations: ['Schedule tutoring session', 'Offer peer mentoring', 'Provide additional resources'],
+  };
 }
 
 export async function getClinicalDecisionSupport(patientCase: any): Promise<any | null> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/clinical-support`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ patient_case: patientCase }),
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.support : null;
-  } catch (error) {
-    console.error('Get clinical support error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  return {
+    diagnosis_support: ['Acute Myocardial Infarction', 'Unstable Angina'],
+    treatment_recommendations: ['Administer aspirin', 'Start heparin drip', 'Prepare for cardiac catheterization'],
+    monitoring_parameters: ['Cardiac enzymes', 'ECG every 15 minutes', 'Vital signs every 5 minutes'],
+    educational_resources: ['MI Management Guidelines', 'Acute Cardiac Care Protocol'],
+  };
 }
 
 export async function fetchScenarioAssignments(scenarioId?: string): Promise<ScenarioAssignment[]> {
-  const url = scenarioId 
-    ? `${API_URL}/faculty/scenario-assignments?scenario_id=${scenarioId}`
-    : `${API_URL}/faculty/scenario-assignments`;
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.assignments : [];
-  } catch (error) {
-    console.error('Fetch scenario assignments error:', error);
-    return [];
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const assignments: ScenarioAssignment[] = [
+    {
+      id: 'assign-001',
+      scenario_id: 'scenario-001',
+      scenario_title: 'Acute MI Response',
+      student_id: 'student-001',
+      student_name: 'Maria Cruz',
+      assigned_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      required: true,
+      score: 85,
+      completed_at: undefined,
+      time_taken: 2400,
+    },
+    {
+      id: 'assign-002',
+      scenario_id: 'scenario-002',
+      scenario_title: 'Diabetic Patient Education',
+      student_id: 'student-002',
+      student_name: 'Juan Reyes',
+      assigned_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'pending',
+      required: true,
+      score: undefined,
+      completed_at: undefined,
+      time_taken: undefined,
+    },
+  ];
+
+  let filtered = assignments;
+  if (scenarioId) {
+    filtered = assignments.filter(a => a.scenario_id === scenarioId);
   }
+
+  return filtered;
 }
 
 export async function assignScenarioToStudents(
-  scenarioId: string, 
-  studentIds: string[], 
-  deadline: string, 
+  scenarioId: string,
+  studentIds: string[],
+  deadline: string,
   required: boolean
 ): Promise<ScenarioAssignment[]> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/scenario-assignments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scenario_id: scenarioId, student_ids: studentIds, deadline, required }),
-    });
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.assignments : [];
-  } catch (error) {
-    console.error('Assign scenario error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return studentIds.map((studentId, index) => ({
+    id: `assign-${Date.now()}-${index}`,
+    scenario_id: scenarioId,
+    scenario_title: 'Assigned Scenario',
+    student_id: studentId,
+    student_name: 'Student',
+    assigned_at: new Date().toISOString(),
+    deadline,
+    status: 'pending' as const,
+    required,
+  }));
 }
 
 export async function fetchStudentScenarioAssignments(studentId: string): Promise<ScenarioAssignment[]> {
-  try {
-    const response = await fetch(`${API_URL}/students/${studentId}/scenario-assignments`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.assignments : [];
-  } catch (error) {
-    console.error('Fetch student scenario assignments error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'assign-001',
+      scenario_id: 'scenario-001',
+      scenario_title: 'Acute MI Response',
+      student_id: studentId,
+      student_name: 'Maria Cruz',
+      assigned_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      required: true,
+      score: 85,
+    },
+  ];
 }
 
 export async function submitScenarioPerformance(
@@ -656,29 +1113,39 @@ export async function submitScenarioPerformance(
   completedTasks: string[],
   timeTaken: number
 ): Promise<ScenarioPerformance | null> {
-  try {
-    const response = await fetch(`${API_URL}/students/scenario-performance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scenario_id: scenarioId, completed_tasks: completedTasks, time_taken: timeTaken }),
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.success ? data.performance : null;
-  } catch (error) {
-    console.error('Submit scenario performance error:', error);
-    return null;
-  }
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return {
+    id: `perf-${Date.now()}`,
+    student_id: 'student-001',
+    student_name: 'Maria Cruz',
+    scenario_id: scenarioId,
+    scenario_title: 'Scenario Title',
+    score: 85,
+    max_score: 100,
+    time_taken: timeTaken,
+    completed_tasks: completedTasks,
+    total_tasks: 8,
+    completed_at: new Date().toISOString(),
+  };
 }
 
 export async function fetchStudentScenarioHistory(studentId: string): Promise<ScenarioPerformance[]> {
-  try {
-    const response = await fetch(`${API_URL}/faculty/students/${studentId}/scenario-performance`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.success ? data.history : [];
-  } catch (error) {
-    console.error('Fetch student scenario history error:', error);
-    return [];
-  }
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'perf-001',
+      student_id: studentId,
+      student_name: 'Maria Cruz',
+      scenario_id: 'scenario-001',
+      scenario_title: 'Acute MI Response',
+      score: 85,
+      max_score: 100,
+      time_taken: 2400,
+      completed_tasks: ['Assessment', 'Intervention', 'Documentation'],
+      total_tasks: 8,
+      completed_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
 }
