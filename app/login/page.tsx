@@ -101,9 +101,10 @@ export default function LoginPage() {
                 onMouseLeave={() => setActiveFeature(null)}
                 className={`
                   relative p-4 rounded-2xl text-left transition-all duration-300 group cursor-pointer
-                  ${activeFeature === index
-                    ? "bg-white/20 shadow-xl shadow-white/10 scale-[1.02]"
-                    : "bg-white/5 hover:bg-white/10 hover:scale-[1.01]"
+                  ${
+                    activeFeature === index
+                      ? "bg-white/20 shadow-xl shadow-white/10 scale-[1.02]"
+                      : "bg-white/5 hover:bg-white/10 hover:scale-[1.01]"
                   }
                 `}
               >
@@ -312,6 +313,31 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="mt-6 p-4 bg-blue-50/80 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-blue-900 mb-2">Test Credentials</p>
+                <div className="space-y-1.5 text-sm text-blue-800">
+                  <div className="flex justify-between">
+                    <span>admin@icare.edu / admin123</span>
+                    <span className="text-blue-600 font-medium">Admin</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>student@icare.edu / student123</span>
+                    <span className="text-blue-600 font-medium">Student</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>faculty@icare.edu / faculty123</span>
+                    <span className="text-blue-600 font-medium">Faculty</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="text-center pt-4 border-t border-gray-100"></div>
           <p className="text-center text-xs text-gray-400">
