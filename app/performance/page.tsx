@@ -20,6 +20,7 @@ function logout(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('icare_user');
     localStorage.removeItem('icare_token');
+    void fetch('/api/auth/logout', { method: 'POST' });
   }
 }
 

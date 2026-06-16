@@ -1,42 +1,24 @@
-// Mock Credentials Database
-const MOCK_USERS: Array<{ email: string; password: string; user: User }> = [
-  {
-    email: 'admin@icare.edu',
-    password: 'admin123',
-    user: {
-      id: 'admin-001',
-      email: 'admin@icare.edu',
-      name: 'Dr. Maria Santos',
-      role: 'admin',
-    },
-  },
-  {
-    email: 'student@icare.edu',
-    password: 'student123',
-    user: {
-      id: 'student-001',
-      email: 'student@icare.edu',
-      name: 'Maria Cruz',
-      role: 'student',
-    },
-  },
-  {
-    email: 'faculty@icare.edu',
-    password: 'faculty123',
-    user: {
-      id: 'faculty-001',
-      email: 'faculty@icare.edu',
-      name: 'Dr. Juan Dela Cruz',
-      role: 'faculty',
-    },
-  },
-];
-
 export interface User {
   id: string;
   email: string;
   name: string;
   role: 'student' | 'faculty' | 'admin';
+  picture_url?: string | null;
+}
+
+const USER_STORAGE_KEY = 'icare_user';
+const TOKEN_STORAGE_KEY = 'icare_token';
+const SESSION_ENDPOINT = '/api/auth/session';
+
+function mirrorToStorage(user: User | null) {
+  if (typeof window === 'undefined') return;
+  if (user) {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    localStorage.setItem(TOKEN_STORAGE_KEY, 'logged_in');
+  } else {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
 }
 
 export interface Patient {
@@ -290,54 +272,60 @@ const generateMockPerformanceLogs = (userId: string): PerformanceLog[] => [
 
 // Authentication Functions
 export async function login(email: string, password: string): Promise<{ user: User; sessionToken: string } | null> {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-
-  const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
-  if (!mockUser) return null;
-
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('icare_user', JSON.stringify(mockUser.user));
-    localStorage.setItem('icare_token', 'logged_in');
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) return null;
+    const { user, sessionToken } = (await res.json()) as { user: User; sessionToken: string };
+    mirrorToStorage(user);
+    return { user, sessionToken };
+  } catch (err) {
+    console.error('login() failed', err);
+    return null;
   }
-  return { user: mockUser.user, sessionToken: 'logged_in' };
 }
 
-export async function register(email: string, password: string, name: string, role: string = 'student'): Promise<User | null> {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-
-  // For mock, just create a new user object
-  const newUser: User = {
-    id: `${role}-${Date.now()}`,
-    email,
-    name,
-    role: role as 'student' | 'faculty' | 'admin',
-  };
-
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('icare_user', JSON.stringify(newUser));
-    localStorage.setItem('icare_token', 'logged_in');
-  }
-  return newUser;
+export async function register(): Promise<User | null> {
+  console.warn('Self-service registration is disabled. Use the seeded test accounts or sign in with Google.');
+  return null;
 }
 
-export function logout(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('icare_user');
-    localStorage.removeItem('icare_token');
+export async function logout(): Promise<void> {
+  mirrorToStorage(null);
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (err) {
+    console.error('logout() failed', err);
   }
 }
 
 export function getCurrentUser(): User | null {
   if (typeof window === 'undefined') return null;
-  const userStr = localStorage.getItem('icare_user');
+  const userStr = localStorage.getItem(USER_STORAGE_KEY);
   return userStr ? JSON.parse(userStr) : null;
 }
 
 export function isAuthenticated(): boolean {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem('icare_token') === 'logged_in';
+  return localStorage.getItem(TOKEN_STORAGE_KEY) === 'logged_in';
+}
+
+export async function refreshCurrentUser(): Promise<User | null> {
+  try {
+    const res = await fetch(SESSION_ENDPOINT, { credentials: 'include' });
+    if (!res.ok) {
+      mirrorToStorage(null);
+      return null;
+    }
+    const { user } = (await res.json()) as { user: User | null };
+    mirrorToStorage(user);
+    return user;
+  } catch {
+    return getCurrentUser();
+  }
 }
 
 // Student API Functions
