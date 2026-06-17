@@ -21,26 +21,33 @@ async function main() {
       email: 'admin@icare.edu',
       name: 'Dr. Maria Santos',
       role: 'admin' as const,
-      password: 'admin123',
+      password: process.env.SEED_ADMIN_PASSWORD,
       google_sub: 'mock-admin-001',
     },
     {
       email: 'student@icare.edu',
       name: 'Maria Cruz',
       role: 'student' as const,
-      password: 'student123',
+      password: process.env.SEED_STUDENT_PASSWORD,
       google_sub: 'mock-student-001',
     },
     {
       email: 'faculty@icare.edu',
       name: 'Dr. Juan Dela Cruz',
       role: 'faculty' as const,
-      password: 'faculty123',
+      password: process.env.SEED_FACULTY_PASSWORD,
       google_sub: 'mock-faculty-001',
     },
   ];
 
   for (const u of users) {
+    if (!u.password) {
+      console.error(
+        `Missing SEED_${u.role.toUpperCase()}_PASSWORD environment variable for ${u.email}`,
+      );
+      process.exit(1);
+    }
+
     const password_hash = await bcrypt.hash(u.password, 10);
     const { error } = await supabase
       .from('users')

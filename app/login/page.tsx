@@ -131,40 +131,35 @@ export default function LoginPage() {
                 priority
               />
             </div>
-
-            <h2 className="text-4xl xl:text-5xl font-semibold tracking-tight mb-5">iCARE++</h2>
             <p className="text-lg xl:text-xl text-white/85 text-center max-w-md leading-relaxed">
               A Scalable Machine Learning-Driven Clinical Competency Assessment and Adaptive
               Learning System for Nursing Students
             </p>
           </div>
         </div>
-
         {/* Right panel — cards */}
         <div className="w-full lg:w-1/2 flex items-center justify-center px-5 sm:px-8 py-12 bg-[#F8FBFC] relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full opacity-40">
             <div className="absolute top-[-10%] right-[-10%] w-[350px] h-[350px] bg-[#7DD3D8]/20 rounded-full blur-3xl" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[300px] h-[300px] bg-[#0D7377]/10 rounded-full blur-3xl" />
           </div>
-
           <div className="relative z-10 w-full max-w-[520px] animate-fade-in-up">
             {/* Mobile header */}
             <div className="lg:hidden flex flex-col items-center mb-6">
               <div className="p-3.5 bg-[#E8F6F5] rounded-2xl shadow-md mb-3">
                 <Image src={logo} alt="iCare++ Logo" className="h-12 w-auto" priority />
               </div>
-              <h2 className="text-2xl font-semibold text-[#0F4C5C]">iCARE++</h2>
             </div>
-
             {/* Login card */}
             <div className="bg-white rounded-3xl border border-[#E2EBEC] shadow-xl shadow-[#0D7377]/[0.05] p-7 sm:p-9">
               <div className="mb-6">
                 <h1 className="text-3xl font-semibold text-[#0F172A] mb-1 tracking-tight">
                   Welcome back, caregiver
                 </h1>
-                <p className="text-sm text-[#64748B]">Sign in to continue your journey in nursing excellence</p>
+                <p className="text-sm text-[#64748B]">
+                  Sign in to continue your journey in nursing excellence
+                </p>
               </div>
-
               {/* Error banner */}
               {error && (
                 <div className="flex items-start gap-3 p-3.5 mb-5 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm animate-shake">
@@ -182,10 +177,12 @@ export default function LoginPage() {
                   <span>{error}</span>
                 </div>
               )}
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-[#334155] mb-1.5">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-[#334155] mb-1.5"
+                  >
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -217,7 +214,10 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-[#334155] mb-1.5">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-[#334155] mb-1.5"
+                  >
                     Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -251,7 +251,12 @@ export default function LoginPage() {
                       className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#94A3B8] hover:text-[#64748B] transition-colors"
                     >
                       {showPassword ? (
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -260,7 +265,12 @@ export default function LoginPage() {
                           />
                         </svg>
                       ) : (
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -389,40 +399,6 @@ export default function LoginPage() {
                     Sign up
                   </Link>
                 </p>
-              </div>
-            </div>
-
-            {/* Test credentials card */}
-            <div className="mt-5 p-4 bg-white border border-[#D0EBEA] rounded-2xl shadow-lg shadow-[#0D7377]/[0.03]">
-              <div className="flex items-start gap-3">
-                <svg
-                  className="w-5 h-5 text-[#0D7377] mt-0.5 flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#0F4C5C] mb-2">Test Credentials</p>
-                  <div className="space-y-1 text-sm text-[#3D6B73]">
-                    <div className="flex justify-between gap-2">
-                      <span className="truncate">admin@icare.edu / admin123</span>
-                      <span className="text-[#0D7377] font-medium flex-shrink-0">Admin</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="truncate">student@icare.edu / student123</span>
-                      <span className="text-[#0D7377] font-medium flex-shrink-0">Student</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="truncate">faculty@icare.edu / faculty123</span>
-                      <span className="text-[#0D7377] font-medium flex-shrink-0">Faculty</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 

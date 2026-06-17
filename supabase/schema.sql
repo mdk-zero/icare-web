@@ -34,10 +34,9 @@ create policy "users can read own row" on public.users
 -- matching password hashes (or paste the SQL produced by the script
 -- directly into the editor).
 -- =================================================================
--- The seed script upserts these rows with bcrypt hashes:
---   admin@icare.edu   / admin123    -> role: admin
---   student@icare.edu / student123  -> role: student
---   faculty@icare.edu / faculty123  -> role: faculty
+-- The seed script upserts these rows with bcrypt hashes.
+-- Set SEED_ADMIN_PASSWORD, SEED_STUDENT_PASSWORD, and SEED_FACULTY_PASSWORD
+-- in your environment before running `npm run db:seed`.
 
 -- =================================================================
 -- Password resets (OTP-based)
