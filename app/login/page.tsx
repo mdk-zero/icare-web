@@ -1,38 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { GoogleOAuthProvider, GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { login, isAuthenticated, getCurrentUser, User } from "../lib/api";
 import logo from "../../public/logo-no-bg.png";
 import logo_white from "../../public/logo-white-no-bg.png";
-import logo_pill from "../../public/logo-pill.png";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 
-const features = [
-  {
-    icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
-    label: "Student Portal",
-    description: "Access clinical simulations and adaptive quizzes",
-  },
-  {
-    icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
-    label: "Faculty Portal",
-    description: "Monitor student performance and manage scenarios",
-  },
-  {
-    icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
-    label: "Admin Portal",
-    description: "System administration and data analytics",
-  },
-  {
-    icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-    label: "ML-Powered Analytics",
-    description: "Early identification of at-risk students",
-  },
-];
+function MedicalCross({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="16" y="4" width="8" height="32" rx="2" fill="currentColor" />
+      <rect x="4" y="16" width="32" height="8" rx="2" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,7 +26,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -71,7 +56,7 @@ export default function LoginPage() {
       } else {
         setError("Invalid email or password");
       }
-    } catch (err) {
+    } catch {
       setError("Connection error. Please make sure the backend is running.");
     } finally {
       setIsLoading(false);
@@ -103,8 +88,7 @@ export default function LoginPage() {
       router.push(
         user.role === "student" ? "/dashboard" : user.role === "faculty" ? "/faculty" : "/admin",
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError("Google sign-in failed. Please try again.");
       setIsGoogleLoading(false);
     }
@@ -117,222 +101,253 @@ export default function LoginPage() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div className="min-h-screen flex">
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1B6B7B] via-[#0F4C5C] to-[#0A3640] relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute bottom-0 right-0 w-72 h-72 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
-          <div className="absolute top-1/2 left-1/2 w-40 h-40 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute top-1/4 right-1/4 w-24 h-24 border border-white/10 rounded-full" />
-          <div className="absolute bottom-1/3 left-1/4 w-16 h-16 border border-white/10 rounded-full" />
+        {/* Left panel — logo & description */}
+        <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0D7377] via-[#0A5C5F] to-[#084A4D]">
+          <div className="absolute inset-0 opacity-[0.05]">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="crossPattern" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <path d="M36 28h8v12h12v8h-12v12h-8v-12h-12v-8h12z" fill="#ffffff" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#crossPattern)" />
+            </svg>
+          </div>
 
-          <div className="relative z-10 flex flex-col justify-center items-center w-full px-12 text-white">
-            <div className="mb-4">
-              <Image src={logo_white} alt="iCare++ Logo" className="h-20 w-auto" />
+          <MedicalCross className="absolute top-[12%] left-[10%] w-16 h-16 text-white/8 animate-float-slow" />
+          <MedicalCross className="absolute top-[30%] right-[12%] w-10 h-10 text-white/10 animate-float-medium" />
+          <MedicalCross className="absolute bottom-[20%] left-[15%] w-12 h-12 text-white/6 animate-float-slow" />
+          <MedicalCross className="absolute bottom-[38%] right-[8%] w-8 h-8 text-white/8 animate-float-medium" />
+
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
+
+          <div className="relative z-10 flex flex-col justify-center items-center w-full px-14 xl:px-20 text-white">
+            <div className="mb-8 p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl shadow-black/10">
+              <Image
+                src={logo_white}
+                alt="iCare++ Logo"
+                className="h-24 w-auto drop-shadow-md"
+                priority
+              />
             </div>
-            <p className="text-xl text-white/90 text-center max-w-md mb-10">
+
+            <h2 className="text-4xl xl:text-5xl font-semibold tracking-tight mb-5">iCARE++</h2>
+            <p className="text-lg xl:text-xl text-white/85 text-center max-w-md leading-relaxed">
               A Scalable Machine Learning-Driven Clinical Competency Assessment and Adaptive
-              Learning System For Nursing Students
+              Learning System for Nursing Students
             </p>
-
-            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-              {features.map((feature, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveFeature(activeFeature === index ? null : index)}
-                  onMouseEnter={() => setActiveFeature(index)}
-                  onMouseLeave={() => setActiveFeature(null)}
-                  className={`
-                  relative p-4 rounded-2xl text-left transition-all duration-300 group cursor-pointer
-                  ${
-                    activeFeature === index
-                      ? "bg-white/20 shadow-xl shadow-white/10 scale-[1.02]"
-                      : "bg-white/5 hover:bg-white/10 hover:scale-[1.01]"
-                  }
-                `}
-                >
-                  <div
-                    className={`
-                  flex items-center justify-center w-12 h-12 rounded-xl mb-3 transition-all duration-300
-                  ${activeFeature === index ? "bg-white/30" : "bg-white/10 group-hover:bg-white/20"}
-                `}
-                  >
-                    <svg
-                      className={`w-6 h-6 text-white transition-transform duration-300 ${activeFeature === index ? "scale-110" : ""}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={feature.icon}
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-semibold text-white mb-1">{feature.label}</h3>
-                  <p
-                    className={`
-                  text-xs text-white/70 transition-all duration-300 overflow-hidden
-                  ${activeFeature === index ? "max-h-8 opacity-100" : "max-h-0 opacity-0"}
-                `}
-                  >
-                    {feature.description}
-                  </p>
-                  <div
-                    className={`
-                  absolute bottom-2 right-2 w-2 h-2 rounded-full transition-all duration-300
-                  ${activeFeature === index ? "bg-white scale-100" : "bg-white/30 scale-0 group-hover:scale-100"}
-                `}
-                  />
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
-        <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-white">
-          <div className="w-full max-w-md space-y-8">
-            <div className="lg:hidden flex flex-col items-center mb-8">
-              <Image src={logo} alt="iCare++ Logo" className="h-20 w-auto mb-4" />
-            </div>
+        {/* Right panel — cards */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center px-5 sm:px-8 py-12 bg-[#F8FBFC] relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full opacity-40">
+            <div className="absolute top-[-10%] right-[-10%] w-[350px] h-[350px] bg-[#7DD3D8]/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[300px] h-[300px] bg-[#0D7377]/10 rounded-full blur-3xl" />
+          </div>
 
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back!</h1>
-              <p className="text-gray-500">Please enter your credentials to access your account</p>
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {error}
+          <div className="relative z-10 w-full max-w-[520px] animate-fade-in-up">
+            {/* Mobile header */}
+            <div className="lg:hidden flex flex-col items-center mb-6">
+              <div className="p-3.5 bg-[#E8F6F5] rounded-2xl shadow-md mb-3">
+                <Image src={logo} alt="iCare++ Logo" className="h-12 w-auto" priority />
               </div>
-            )}
+              <h2 className="text-2xl font-semibold text-[#0F4C5C]">iCARE++</h2>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-2">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-[#1B6B7B]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B6B7B] focus:border-[#1B6B7B] transition-all bg-gray-50/50 shadow-sm text-gray-800 placeholder:text-gray-400"
-                    placeholder="Enter your email"
-                  />
+            {/* Login card */}
+            <div className="bg-white rounded-3xl border border-[#E2EBEC] shadow-xl shadow-[#0D7377]/[0.05] p-7 sm:p-9">
+              <div className="mb-6">
+                <h1 className="text-3xl font-semibold text-[#0F172A] mb-1 tracking-tight">
+                  Welcome back, caregiver
+                </h1>
+                <p className="text-sm text-[#64748B]">Sign in to continue your journey in nursing excellence</p>
+              </div>
+
+              {/* Error banner */}
+              {error && (
+                <div className="flex items-start gap-3 p-3.5 mb-5 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm animate-shake">
+                  <svg
+                    className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{error}</span>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label htmlFor="password" className="block text-sm font-semibold text-gray-800">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-[#334155] mb-1.5">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <svg
+                        className="h-5 w-5 text-[#94A3B8]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full pl-11 pr-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D7377]/20 focus:border-[#0D7377] transition-all"
+                      placeholder="name@icare.edu"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-[#334155] mb-1.5">
                     Password <span className="text-red-500">*</span>
                   </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <svg
+                        className="h-5 w-5 text-[#94A3B8]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full pl-11 pr-11 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D7377]/20 focus:border-[#0D7377] transition-all"
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#94A3B8] hover:text-[#64748B] transition-colors"
+                    >
+                      {showPassword ? (
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                          />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-[#CBD5E1] text-[#0D7377] focus:ring-[#0D7377]/30 cursor-pointer"
+                    />
+                    <span className="ml-2 text-sm text-[#64748B] group-hover:text-[#475569] transition-colors">
+                      Remember me
+                    </span>
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-[#0D7377] hover:text-[#0A5C5F] font-medium transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full bg-[#0D7377] hover:bg-[#0A5C5F] text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 shadow-lg shadow-[#0D7377]/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div className="w-full h-px bg-gradient-to-r from-transparent via-[#CBD5E1] to-transparent" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="px-4 bg-white text-[#94A3B8] uppercase tracking-wider font-medium text-[10px]">
+                    or continue with
+                  </span>
+                </div>
+              </div>
+
+              {/* Google button */}
+              <div className="w-full [&>div]:!w-full [&_iframe]:!w-full [&>div]:!min-w-full [&_iframe]:!min-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full">
+                {isGoogleLoading ? (
+                  <div className="w-full h-[44px] border border-[#E2E8F0] rounded-xl flex items-center justify-center gap-2.5 text-[#64748B] bg-[#F8FAFC] text-sm">
                     <svg
-                      className="h-5 w-5 text-[#1B6B7B]"
+                      className="animate-spin h-4 w-4 text-[#0D7377]"
                       fill="none"
                       viewBox="0 0 24 24"
-                      stroke="currentColor"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B6B7B] focus:border-[#1B6B7B] transition-all bg-gray-50/50 shadow-sm text-gray-800 placeholder:text-gray-400"
-                    placeholder="Enter your password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center"
-                  >
-                    {showPassword ? (
-                      <svg
-                        className="h-5 w-5 text-[#1B6B7B]"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-5 w-5 text-[#1B6B7B]"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-[#1B6B7B] border-gray-300 rounded focus:ring-[#1B6B7B] cursor-pointer"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || isGoogleLoading}
-                className="w-full bg-[#1B6B7B] text-white py-3.5 px-6 rounded-xl font-semibold hover:bg-[#155663] focus:outline-none focus:ring-2 focus:ring-[#1B6B7B] focus:ring-offset-2 transition-all duration-200 shadow-lg shadow-[#1B6B7B]/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                       <circle
                         className="opacity-25"
                         cx="12"
@@ -347,63 +362,72 @@ export default function LoginPage() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Signing in...
-                  </>
+                    Signing in with Google...
+                  </div>
                 ) : (
-                  "Sign In"
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    theme="outline"
+                    size="large"
+                    shape="rectangular"
+                    text="continue_with"
+                    logo_alignment="left"
+                    width="100%"
+                    useOneTap={false}
+                  />
                 )}
-              </button>
-            </form>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                <div className="w-full border-t border-gray-200" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white text-gray-400">or continue with</span>
-              </div>
-            </div>
 
-            <div className="flex justify-center">
-              {isGoogleLoading ? (
-                <div className="w-full border border-gray-200 rounded-xl py-3.5 flex items-center justify-center gap-2 text-gray-500 bg-white">
-                  <svg
-                    className="animate-spin h-5 w-5 text-[#1B6B7B]"
-                    fill="none"
-                    viewBox="0 0 24 24"
+              <div className="mt-6 text-center">
+                <p className="text-sm text-[#64748B]">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/signup"
+                    className="text-[#0D7377] hover:text-[#0A5C5F] font-medium transition-colors"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Signing in with Google...
-                </div>
-              ) : (
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  theme="outline"
-                  size="large"
-                  shape="rectangular"
-                  text="continue_with"
-                  logo_alignment="left"
-                  width={400}
-                  useOneTap={false}
-                />
-              )}
+                    Sign up
+                  </Link>
+                </p>
+              </div>
             </div>
-            <div className="text-center pt-4 border-t border-gray-100"></div>
-            <p className="text-center text-xs text-gray-400">
+
+            {/* Test credentials card */}
+            <div className="mt-5 p-4 bg-white border border-[#D0EBEA] rounded-2xl shadow-lg shadow-[#0D7377]/[0.03]">
+              <div className="flex items-start gap-3">
+                <svg
+                  className="w-5 h-5 text-[#0D7377] mt-0.5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#0F4C5C] mb-2">Test Credentials</p>
+                  <div className="space-y-1 text-sm text-[#3D6B73]">
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate">admin@icare.edu / admin123</span>
+                      <span className="text-[#0D7377] font-medium flex-shrink-0">Admin</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate">student@icare.edu / student123</span>
+                      <span className="text-[#0D7377] font-medium flex-shrink-0">Student</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate">faculty@icare.edu / faculty123</span>
+                      <span className="text-[#0D7377] font-medium flex-shrink-0">Faculty</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <p className="text-center text-xs text-[#94A3B8] mt-5">
               &copy; 2026 iCARE++. All rights reserved.
             </p>
           </div>

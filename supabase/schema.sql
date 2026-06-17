@@ -38,3 +38,24 @@ create policy "users can read own row" on public.users
 --   admin@icare.edu   / admin123    -> role: admin
 --   student@icare.edu / student123  -> role: student
 --   faculty@icare.edu / faculty123  -> role: faculty
+
+-- =================================================================
+-- Password resets (OTP-based)
+-- =================================================================
+
+create table if not exists public.password_resets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  otp_hash text not null,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- Index for fast lookup of the latest active reset for a user
+create index if not exists idx_password_resets_user_created
+  on public.password_resets(user_id, created_at desc);
+
+-- Only service-role/admin operations should touch this table directly.
+-- No RLS policy is needed because server-side code bypasses RLS with the
+-- service role key, and end users never query it themselves.

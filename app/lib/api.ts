@@ -288,9 +288,21 @@ export async function login(email: string, password: string): Promise<{ user: Us
   }
 }
 
-export async function register(): Promise<User | null> {
-  console.warn('Self-service registration is disabled. Use the seeded test accounts or sign in with Google.');
-  return null;
+export async function register(name: string, email: string, password: string): Promise<{ user: User; sessionToken: string } | null> {
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+    if (!res.ok) return null;
+    const { user, sessionToken } = (await res.json()) as { user: User; sessionToken: string };
+    mirrorToStorage(user);
+    return { user, sessionToken };
+  } catch (err) {
+    console.error('register() failed', err);
+    return null;
+  }
 }
 
 export async function logout(): Promise<void> {
