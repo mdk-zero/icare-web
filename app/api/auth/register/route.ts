@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     role?: unknown;
   };
 
-  const validRoles: UserRole[] = ['student', 'faculty', 'admin'];
+  const validRoles: UserRole[] = ['faculty', 'admin'];
 
   if (
     typeof name !== 'string' ||

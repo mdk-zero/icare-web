@@ -8,7 +8,7 @@ import {
   signSession,
 } from '@/app/lib/auth/session';
 
-const VALID_ROLES: UserRole[] = ['student', 'faculty', 'admin'];
+const VALID_ROLES: UserRole[] = ['faculty', 'admin'];
 
 export async function POST(request: Request) {
   const pending = await readGoogleOnboarding();

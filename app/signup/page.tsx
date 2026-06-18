@@ -23,7 +23,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<User["role"]>("student");
+  const [role, setRole] = useState<User["role"]>("faculty");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -55,11 +55,9 @@ export default function SignUpPage() {
       localStorage.setItem("icare_user", JSON.stringify(result.user));
       localStorage.setItem("icare_token", "logged_in");
       router.push(
-        result.user.role === "student"
-          ? "/dashboard"
-          : result.user.role === "faculty"
-            ? "/faculty"
-            : "/admin",
+        result.user.role === "faculty"
+          ? "/faculty"
+          : "/admin",
       );
     } catch {
       setError("Connection error. Please try again.");
@@ -239,7 +237,6 @@ export default function SignUpPage() {
                     required
                     className="w-full pl-11 pr-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0D7377]/20 focus:border-[#0D7377] transition-all appearance-none"
                   >
-                    <option value="student">Student</option>
                     <option value="faculty">Faculty</option>
                     <option value="admin">Administrator</option>
                   </select>

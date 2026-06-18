@@ -19,12 +19,6 @@ const roles: {
   icon: string;
 }[] = [
   {
-    id: "student",
-    label: "Student",
-    description: "Access quizzes, patients, scenarios, and track your progress.",
-    icon: "M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z",
-  },
-  {
     id: "faculty",
     label: "Faculty",
     description: "Manage students, assign scenarios, and review performance.",
@@ -81,9 +75,7 @@ export default function SelectRolePage() {
     localStorage.setItem("icare_user", JSON.stringify(result.user));
     localStorage.setItem("icare_token", "logged_in");
     router.push(
-      result.user.role === "student"
-        ? "/dashboard"
-        : result.user.role === "faculty"
+      result.user.role === "faculty"
         ? "/faculty"
         : "/admin",
     );
