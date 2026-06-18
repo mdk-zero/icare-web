@@ -11,44 +11,47 @@ import {
   User,
 } from "../lib/api";
 
-const navItems = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
-  },
-  {
-    id: "patients",
-    label: "Patients",
-    href: "/dashboard?tab=patients",
-    icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-  },
-  {
-    id: "quizzes",
-    label: "Quizzes",
-    href: "/dashboard?tab=quizzes",
-    icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
-  },
-  {
-    id: "scenarios",
-    label: "Scenarios",
-    href: "/dashboard?tab=scenarios",
-    icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.414 1.414.586 3.414-1.414 3.414H12m8 0h2a2 2 0 002-2v-4a2 2 0 00-2-2h-2",
-  },
-  {
-    id: "performance",
-    label: "Performance",
-    href: "/dashboard?tab=performance",
-    icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-  },
-];
+export interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: string;
+}
 
-export default function StudentShell({
-  children,
-}: {
+interface ShellProps {
+  role: "student" | "faculty" | "admin";
+  navItems: NavItem[];
+  isActive: (item: NavItem, pathname: string, searchParams: URLSearchParams) => boolean;
   children: React.ReactNode;
-}) {
+}
+
+const config = {
+  student: {
+    logo: "/logo-pill.png",
+    portalLabel: "Student Portal",
+    mobileRoleLabel: "Student",
+    profileHref: "/profile",
+  },
+  faculty: {
+    logo: "/logo-white-no-bg.png",
+    portalLabel: "Faculty Portal",
+    mobileRoleLabel: "Faculty",
+    profileHref: "/faculty/settings",
+  },
+  admin: {
+    logo: "/logo-white-no-bg.png",
+    portalLabel: "Admin Portal",
+    mobileRoleLabel: "Admin",
+    profileHref: "/admin/settings",
+  },
+};
+
+export default function Shell({
+  role,
+  navItems,
+  isActive,
+  children,
+}: ShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -59,7 +62,7 @@ export default function StudentShell({
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const activeTab = searchParams.get("tab") || "dashboard";
+  const { logo, portalLabel, mobileRoleLabel, profileHref } = config[role];
 
   useEffect(() => {
     let mounted = true;
@@ -69,12 +72,18 @@ export default function StudentShell({
         router.replace("/login");
         return;
       }
-      const fresh = await refreshCurrentUser();
+
+      let fresh: User | null = current;
+      if (role === "student") {
+        fresh = await refreshCurrentUser();
+      }
+
       if (!mounted) return;
       if (!fresh) {
         router.replace("/login");
         return;
       }
+
       setUser(fresh);
       setIsLoading(false);
       const url = await getDisplayAvatarUrl(fresh.picture_url);
@@ -86,7 +95,7 @@ export default function StudentShell({
     return () => {
       mounted = false;
     };
-  }, [router]);
+  }, [router, role]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -157,15 +166,25 @@ export default function StudentShell({
 
           <div className="p-6 border-b border-white/10 relative z-10">
             <div className="flex items-center gap-3">
-              <img
-                src="/logo-pill.png"
-                alt="iCARE++"
-                className="h-12 w-auto object-contain drop-shadow-md"
-              />
-              <div>
-                <h1 className="text-xl font-bold tracking-tight">iCARE++</h1>
-                <p className="text-xs text-white/60">Student Portal</p>
-              </div>
+              {role === "student" ? (
+                <>
+                  <img
+                    src={logo}
+                    alt="iCARE++"
+                    className="h-12 w-auto object-contain drop-shadow-md"
+                  />
+                  <div>
+                    <h1 className="text-xl font-bold tracking-tight">iCARE++</h1>
+                    <p className="text-xs text-white/60">{portalLabel}</p>
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={logo}
+                  alt="iCARE++"
+                  className="h-12 w-auto object-contain drop-shadow-md"
+                />
+              )}
             </div>
           </div>
 
@@ -174,27 +193,24 @@ export default function StudentShell({
               Menu
             </p>
             {navItems.map((item) => {
-              const isActive =
-                item.id === "dashboard"
-                  ? pathname === "/dashboard" && activeTab === "dashboard"
-                  : activeTab === item.id;
+              const active = isActive(item, pathname, searchParams);
               return (
                 <Link
                   key={item.id}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative ${
-                    isActive
+                    active
                       ? "bg-white/20 shadow-lg backdrop-blur-sm"
                       : "hover:bg-white/10"
                   }`}
                 >
-                  {isActive && (
+                  {active && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
                   )}
                   <div
                     className={`p-1.5 rounded-lg ${
-                      isActive ? "bg-white/20" : "bg-white/10"
+                      active ? "bg-white/20" : "bg-white/10"
                     }`}
                   >
                     <svg
@@ -213,7 +229,7 @@ export default function StudentShell({
                   </div>
                   <span
                     className={`font-medium ${
-                      isActive ? "text-white" : "text-white/80"
+                      active ? "text-white" : "text-white/80"
                     }`}
                   >
                     {item.label}
@@ -265,7 +281,7 @@ export default function StudentShell({
               {userDropdownOpen && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#145a63]/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-xl">
                   <Link
-                    href="/profile"
+                    href={profileHref}
                     onClick={() => {
                       setUserDropdownOpen(false);
                       setSidebarOpen(false);
@@ -301,7 +317,7 @@ export default function StudentShell({
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                       />
                     </svg>
                     <span>Logout</span>
@@ -349,7 +365,7 @@ export default function StudentShell({
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#1B6B7B] rounded-lg flex items-center justify-center p-1">
                   <img
-                    src="/logo-pill.png"
+                    src={logo}
                     alt="iCARE++"
                     className="w-full h-full object-contain"
                   />
@@ -357,8 +373,25 @@ export default function StudentShell({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {role !== "student" && (
+                <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                  <svg
+                    className="w-5 h-5 text-gray-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    />
+                  </svg>
+                </button>
+              )}
               <span className="px-2 py-1.5 bg-gradient-to-r from-[#1B6B7B] to-[#145a63] text-white text-xs font-medium rounded-lg">
-                Student
+                {mobileRoleLabel}
               </span>
             </div>
           </div>

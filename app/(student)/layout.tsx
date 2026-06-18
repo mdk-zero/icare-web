@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import StudentShell from "./StudentShell";
+import StudentLayoutClient from "./layout-client";
 
 export default function StudentLayout({
   children,
@@ -14,7 +14,7 @@ export default function StudentLayout({
         </div>
       }
     >
-      <StudentShell>{children}</StudentShell>
+      <StudentLayoutClient>{children}</StudentLayoutClient>
     </Suspense>
   );
 }
