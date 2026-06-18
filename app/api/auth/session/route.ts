@@ -12,7 +12,7 @@ export async function GET() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('users')
-      .select('id, email, name, role, picture_url')
+      .select('id, email, name, role, picture_url, password_hash')
       .eq('id', session.uid)
       .maybeSingle();
     if (error) throw error;

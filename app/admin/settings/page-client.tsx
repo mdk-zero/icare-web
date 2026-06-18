@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ProfileEditor from "../../components/ProfileEditor";
 
 export default function SettingsClient() {
   const [activeSection, setActiveSection] = useState("profile");
@@ -43,60 +44,7 @@ export default function SettingsClient() {
 
         <div className="flex-1">
           {activeSection === "profile" && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-[#1B6B7B]/30 transition-all duration-300">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Dean Profile</h2>
-              <p className="text-gray-500 mb-6">System Administrator - College of Health Sciences</p>
-              <div className="space-y-6">
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-[#1B6B7B]/10 rounded-full flex items-center justify-center text-[#1B6B7B] text-2xl font-bold">
-                    D
-                  </div>
-                  <button className="px-4 py-2 bg-[#1B6B7B] text-white font-medium rounded-xl hover:bg-[#145a63] transition-all duration-300">
-                    Change Photo
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                    <input
-                      type="text"
-                      defaultValue="Dean"
-                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      defaultValue="Administrator"
-                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input
-                      type="email"
-                      defaultValue="dean@batstateu.edu"
-                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                    <input
-                      type="text"
-                      defaultValue="Super Administrator"
-                      disabled
-                      className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <button className="px-6 py-2.5 bg-[#1B6B7B] text-white font-medium rounded-xl hover:bg-[#145a63] transition-all duration-300">
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ProfileEditor changePasswordHref="/admin/settings/change-password" />
           )}
 
           {activeSection === "access" && (

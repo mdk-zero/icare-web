@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/app/lib/supabase/server';
+import { getSupabaseAdmin, type UserRole } from '@/app/lib/supabase/server';
 import { hashPassword } from '@/app/lib/auth/password';
 import { setSessionCookie, signSession } from '@/app/lib/auth/session';
 import { checkRateLimit } from '@/app/lib/auth/rate-limit';
+import { toPublicUser } from '@/app/lib/auth/user';
 
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_REQUESTS = 3;
@@ -16,11 +17,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { name, email, password } = body as {
+  const { name, email, password, role } = body as {
     name?: unknown;
     email?: unknown;
     password?: unknown;
+    role?: unknown;
   };
+
+  const validRoles: UserRole[] = ['student', 'faculty', 'admin'];
 
   if (
     typeof name !== 'string' ||
@@ -28,9 +32,13 @@ export async function POST(request: Request) {
     typeof password !== 'string' ||
     name.trim().length === 0 ||
     email.trim().length === 0 ||
-    password.length === 0
+    password.length === 0 ||
+    !validRoles.includes(role as UserRole)
   ) {
-    return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Name, email, password, and a valid role are required' },
+      { status: 400 },
+    );
   }
 
   const trimmedName = name.trim();
@@ -70,16 +78,17 @@ export async function POST(request: Request) {
     }
 
     const passwordHash = await hashPassword(password);
+    const selectedRole = role as UserRole;
 
     const { data: user, error } = await supabase
       .from('users')
       .insert({
         email: normalizedEmail,
         name: trimmedName,
-        role: 'student',
+        role: selectedRole,
         password_hash: passwordHash,
       })
-      .select('id, email, name, role, picture_url')
+      .select('id, email, name, role, picture_url, password_hash')
       .single();
 
     if (error) {
@@ -87,10 +96,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unable to create account' }, { status: 500 });
     }
 
-    const token = await signSession({ uid: user.id, role: user.role, email: user.email });
+    const publicUser = toPublicUser(user);
+    const token = await signSession({
+      uid: publicUser.id,
+      role: publicUser.role,
+      email: publicUser.email,
+    });
     await setSessionCookie(token);
 
-    return NextResponse.json({ user, sessionToken: token }, { status: 201 });
+    return NextResponse.json(
+      { user: publicUser, sessionToken: token },
+      { status: 201 },
+    );
   } catch (err) {
     console.error('Registration failed', err);
     return NextResponse.json(

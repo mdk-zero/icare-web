@@ -29,6 +29,7 @@ export interface DbUser {
   name: string;
   picture_url: string | null;
   role: UserRole;
+  password_hash: string | null;
   created_at: string;
   last_login_at: string | null;
 }

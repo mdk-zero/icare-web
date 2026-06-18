@@ -6,15 +6,19 @@ export interface PublicUser {
   name: string;
   role: UserRole;
   picture_url: string | null;
+  has_password: boolean;
 }
 
-export function toPublicUser(row: Pick<DbUser, 'id' | 'email' | 'name' | 'role' | 'picture_url'>): PublicUser {
+export function toPublicUser(
+  row: Pick<DbUser, 'id' | 'email' | 'name' | 'role' | 'picture_url' | 'password_hash'>,
+): PublicUser {
   return {
     id: row.id,
     email: row.email,
     name: row.name,
     role: row.role,
     picture_url: row.picture_url,
+    has_password: Boolean(row.password_hash),
   };
 }
 
@@ -33,7 +37,7 @@ export async function findUserByGoogleSub(sub: string) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from('users')
-    .select('id, email, name, role, picture_url')
+    .select('id, email, name, role, picture_url, password_hash')
     .eq('google_sub', sub)
     .maybeSingle();
   if (error) throw error;
@@ -59,7 +63,33 @@ export async function upsertGoogleUser(profile: {
       },
       { onConflict: 'google_sub' },
     )
-    .select('id, email, name, role, picture_url')
+    .select('id, email, name, role, picture_url, password_hash')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function createGoogleUser(
+  profile: {
+    sub: string;
+    email: string;
+    name: string;
+    picture: string | null;
+  },
+  role: UserRole,
+) {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('users')
+    .insert({
+      google_sub: profile.sub,
+      email: profile.email,
+      name: profile.name,
+      picture_url: profile.picture,
+      role,
+      last_login_at: new Date().toISOString(),
+    })
+    .select('id, email, name, role, picture_url, password_hash')
     .single();
   if (error) throw error;
   return data;

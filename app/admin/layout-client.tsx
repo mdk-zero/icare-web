@@ -4,12 +4,14 @@ import { useState, useEffect, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import { getDisplayAvatarUrl } from "../lib/api";
 
 interface User {
   id: string;
   email: string;
   name: string;
   role: 'student' | 'faculty' | 'admin';
+  picture_url?: string | null;
 }
 
 function getCurrentUser(): User | null {
@@ -40,6 +42,7 @@ export default function ClientAdminLayout({ children }: { children: ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
@@ -50,7 +53,10 @@ export default function ClientAdminLayout({ children }: { children: ReactNode })
     } else if (currentUser.role === 'student') {
       router.push("/dashboard");
     } else {
+      // Hydrate from localStorage after mount to avoid SSR mismatch.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(currentUser);
+      getDisplayAvatarUrl(currentUser.picture_url).then(setAvatarUrl);
     }
   }, [router]);
 
@@ -137,10 +143,12 @@ export default function ClientAdminLayout({ children }: { children: ReactNode })
           <div className="p-4 border-t border-white/10 relative z-10">
             <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10 mb-4 relative">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setUserDropdownOpen(!userDropdownOpen)}>
-                <div className="w-11 h-11 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                <div className="w-11 h-11 bg-white/20 rounded-full flex items-center justify-center shadow-inner overflow-hidden">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold">{user.name.charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate text-sm">{user.name}</p>
@@ -154,6 +162,7 @@ export default function ClientAdminLayout({ children }: { children: ReactNode })
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#145a63]/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-xl">
                   <Link
                     href="/admin/settings"
+                    onClick={() => setSidebarOpen(false)}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/10 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

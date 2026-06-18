@@ -4,6 +4,7 @@ export interface User {
   name: string;
   role: 'student' | 'faculty' | 'admin';
   picture_url?: string | null;
+  has_password?: boolean;
 }
 
 const USER_STORAGE_KEY = 'icare_user';
@@ -288,19 +289,71 @@ export async function login(email: string, password: string): Promise<{ user: Us
   }
 }
 
-export async function register(name: string, email: string, password: string): Promise<{ user: User; sessionToken: string } | null> {
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+  role: User['role'],
+): Promise<{ user: User; sessionToken: string } | null> {
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, role }),
     });
     if (!res.ok) return null;
-    const { user, sessionToken } = (await res.json()) as { user: User; sessionToken: string };
+    const { user, sessionToken } = (await res.json()) as {
+      user: User;
+      sessionToken: string;
+    };
     mirrorToStorage(user);
     return { user, sessionToken };
   } catch (err) {
     console.error('register() failed', err);
+    return null;
+  }
+}
+
+export interface GooglePendingProfile {
+  sub: string;
+  email: string;
+  name: string;
+  picture: string | null;
+}
+
+export async function getPendingGoogleProfile(): Promise<GooglePendingProfile | null> {
+  try {
+    const res = await fetch('/api/auth/google/pending', {
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    const { profile } = (await res.json()) as { profile: GooglePendingProfile };
+    return profile;
+  } catch (err) {
+    console.error('getPendingGoogleProfile() failed', err);
+    return null;
+  }
+}
+
+export async function registerGoogle(
+  role: User['role'],
+): Promise<{ user: User; sessionToken: string } | null> {
+  try {
+    const res = await fetch('/api/auth/google/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ role }),
+    });
+    if (!res.ok) return null;
+    const { user, sessionToken } = (await res.json()) as {
+      user: User;
+      sessionToken: string;
+    };
+    mirrorToStorage(user);
+    return { user, sessionToken };
+  } catch (err) {
+    console.error('registerGoogle() failed', err);
     return null;
   }
 }
@@ -337,6 +390,102 @@ export async function refreshCurrentUser(): Promise<User | null> {
     return user;
   } catch {
     return getCurrentUser();
+  }
+}
+
+// Profile API Functions
+export async function updateProfile(updates: {
+  name: string;
+}): Promise<User | null> {
+  try {
+    const res = await fetch('/api/users/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error || 'Unable to update profile');
+    }
+    const { user } = (await res.json()) as { user: User };
+    mirrorToStorage(user);
+    return user;
+  } catch (err) {
+    console.error('updateProfile() failed', err);
+    throw err;
+  }
+}
+
+export async function uploadAvatar(file: File): Promise<{ path: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const res = await fetch('/api/users/avatar', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error || 'Unable to upload avatar');
+    }
+
+    const { path } = (await res.json()) as { path: string };
+    return { path };
+  } catch (err) {
+    console.error('uploadAvatar() failed', err);
+    throw err;
+  }
+}
+
+export async function getAvatarUrl(path: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `/api/users/avatar-url?path=${encodeURIComponent(path)}`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) return null;
+    const { signedUrl } = (await res.json()) as { signedUrl: string };
+    return signedUrl;
+  } catch (err) {
+    console.error('getAvatarUrl() failed', err);
+    return null;
+  }
+}
+
+export async function getDisplayAvatarUrl(
+  pictureUrl: string | null | undefined,
+): Promise<string | null> {
+  if (!pictureUrl) return null;
+  if (pictureUrl.startsWith('avatars/')) {
+    return getAvatarUrl(pictureUrl);
+  }
+  return pictureUrl;
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/users/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Unable to change password' };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('changePassword() failed', err);
+    return { success: false, error: 'Unable to change password' };
   }
 }
 
