@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign Up | iCARE++",
-  description: "Create your iCARE++ account",
+  title: "Select Role | iCARE++",
+  description: "Choose your iCARE++ account type",
 };
 
-export default function SignUpLayout({
+export default function SelectRoleLayout({
   children,
 }: {
   children: React.ReactNode;

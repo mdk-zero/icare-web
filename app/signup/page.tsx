@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { register } from "../lib/api";
+import { register, User } from "../lib/api";
 import logo from "../../public/logo-no-bg.png";
 import logo_white from "../../public/logo-white-no-bg.png";
 
@@ -23,6 +23,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<User["role"]>("student");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -44,7 +45,7 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const result = await register(name, email, password);
+      const result = await register(name, email, password, role);
       if (!result) {
         setError("Unable to create account. This email may already be in use.");
         setIsLoading(false);
@@ -53,7 +54,13 @@ export default function SignUpPage() {
 
       localStorage.setItem("icare_user", JSON.stringify(result.user));
       localStorage.setItem("icare_token", "logged_in");
-      router.push("/dashboard");
+      router.push(
+        result.user.role === "student"
+          ? "/dashboard"
+          : result.user.role === "faculty"
+            ? "/faculty"
+            : "/admin",
+      );
     } catch {
       setError("Connection error. Please try again.");
       setIsLoading(false);
@@ -93,10 +100,9 @@ export default function SignUpPage() {
             />
           </div>
 
-          <h2 className="text-4xl xl:text-5xl font-semibold tracking-tight mb-5">iCARE++</h2>
           <p className="text-lg xl:text-xl text-white/85 text-center max-w-md leading-relaxed">
-            A Scalable Machine Learning-Driven Clinical Competency Assessment and Adaptive
-            Learning System for Nursing Students
+            A Scalable Machine Learning-Driven Clinical Competency Assessment and Adaptive Learning
+            System for Nursing Students
           </p>
         </div>
       </div>
@@ -114,13 +120,14 @@ export default function SignUpPage() {
             <div className="p-3.5 bg-[#E8F6F5] rounded-2xl shadow-md mb-3">
               <Image src={logo} alt="iCare++ Logo" className="h-12 w-auto" priority />
             </div>
-            <h2 className="text-2xl font-semibold text-[#0F4C5C]">iCARE++</h2>
           </div>
 
           <div className="bg-white rounded-3xl border border-[#E2EBEC] shadow-xl shadow-[#0D7377]/[0.05] p-7 sm:p-9">
             <div className="mb-6">
-              <h1 className="text-xl font-semibold text-[#0F172A] mb-1 tracking-tight">Create your account</h1>
-              <p className="text-sm text-[#64748B]">Join iCARE++ as a nursing student</p>
+              <h1 className="text-xl font-semibold text-[#0F172A] mb-1 tracking-tight">
+                Create your account
+              </h1>
+              <p className="text-sm text-[#64748B]">Join iCARE++ for nursing education</p>
             </div>
 
             {error && (
@@ -206,7 +213,59 @@ export default function SignUpPage() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-[#334155] mb-1.5">
+                <label htmlFor="role" className="block text-sm font-medium text-[#334155] mb-1.5">
+                  I am a <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg
+                      className="h-5 w-5 text-[#94A3B8]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as User["role"])}
+                    required
+                    className="w-full pl-11 pr-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0D7377]/20 focus:border-[#0D7377] transition-all appearance-none"
+                  >
+                    <option value="student">Student</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <svg
+                      className="h-4 w-4 text-[#94A3B8]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-[#334155] mb-1.5"
+                >
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -241,7 +300,12 @@ export default function SignUpPage() {
                     className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#94A3B8] hover:text-[#64748B] transition-colors"
                   >
                     {showPassword ? (
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -250,7 +314,12 @@ export default function SignUpPage() {
                         />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -270,7 +339,10 @@ export default function SignUpPage() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#334155] mb-1.5">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-[#334155] mb-1.5"
+                >
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <input

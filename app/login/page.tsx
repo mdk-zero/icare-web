@@ -28,6 +28,11 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleMounted, setGoogleMounted] = useState(false);
+
+  useEffect(() => {
+    setGoogleMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -82,7 +87,17 @@ export default function LoginPage() {
         setIsGoogleLoading(false);
         return;
       }
-      const { user } = (await res.json()) as { user: User };
+      const data = (await res.json()) as {
+        user?: User;
+        needsRoleSelection?: boolean;
+      };
+
+      if (data.needsRoleSelection) {
+        router.push("/signup/role");
+        return;
+      }
+
+      const user = data.user as User;
       localStorage.setItem("icare_user", JSON.stringify(user));
       localStorage.setItem("icare_token", "logged_in");
       router.push(
@@ -374,7 +389,7 @@ export default function LoginPage() {
                     </svg>
                     Signing in with Google...
                   </div>
-                ) : (
+                ) : googleMounted ? (
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={handleGoogleError}
@@ -383,9 +398,10 @@ export default function LoginPage() {
                     shape="rectangular"
                     text="continue_with"
                     logo_alignment="left"
-                    width="100%"
                     useOneTap={false}
                   />
+                ) : (
+                  <div className="w-full h-[44px] border border-[#E2E8F0] rounded-xl bg-[#F8FAFC]" />
                 )}
               </div>
 
