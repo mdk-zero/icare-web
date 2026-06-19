@@ -3,12 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  getPendingGoogleProfile,
-  registerGoogle,
-  GooglePendingProfile,
-  User,
-} from "../../lib/api";
+import { getPendingGoogleProfile, registerGoogle, GooglePendingProfile, User } from "../../lib/api";
 import logo from "../../../public/logo-no-bg.png";
 import logo_white from "../../../public/logo-white-no-bg.png";
 
@@ -74,11 +69,7 @@ export default function SelectRolePage() {
 
     localStorage.setItem("icare_user", JSON.stringify(result.user));
     localStorage.setItem("icare_token", "logged_in");
-    router.push(
-      result.user.role === "faculty"
-        ? "/faculty"
-        : "/admin",
-    );
+    router.push(result.user.role === "faculty" ? "/faculty" : "/admin");
   };
 
   if (isLoading) {
@@ -122,10 +113,9 @@ export default function SelectRolePage() {
             />
           </div>
 
-          <h2 className="text-4xl xl:text-5xl font-semibold tracking-tight mb-5">iCARE++</h2>
           <p className="text-lg xl:text-xl text-white/85 text-center max-w-md leading-relaxed">
-            A Scalable Machine Learning-Driven Clinical Competency Assessment and Adaptive
-            Learning System for Nursing Students
+            A Scalable Machine Learning-Driven Clinical Competency Assessment and Adaptive Learning
+            System for Nursing Students
           </p>
         </div>
       </div>

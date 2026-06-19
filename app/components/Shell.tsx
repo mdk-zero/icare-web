@@ -3,6 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {
+  faBars,
+  faBell,
+  faChevronDown,
+  faRightFromBracket,
+  faSpinner,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
 import {
   getCurrentUser,
   getDisplayAvatarUrl,
@@ -15,7 +25,7 @@ export interface NavItem {
   id: string;
   label: string;
   href: string;
-  icon: string;
+  icon: IconDefinition;
 }
 
 interface ShellProps {
@@ -118,7 +128,11 @@ export default function Shell({
   if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#1B6B7B] border-t-transparent rounded-full animate-spin" />
+        <FontAwesomeIcon
+          icon={faSpinner}
+          spin
+          className="w-8 h-8 text-[#1B6B7B]"
+        />
       </div>
     );
   }
@@ -213,19 +227,7 @@ export default function Shell({
                       active ? "bg-white/20" : "bg-white/10"
                     }`}
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={item.icon}
-                      />
-                    </svg>
+                    <FontAwesomeIcon icon={item.icon} className="w-4 h-4" />
                   </div>
                   <span
                     className={`font-medium ${
@@ -262,21 +264,12 @@ export default function Shell({
                   <p className="font-semibold truncate text-sm">{user.name}</p>
                   <p className="text-xs text-white/50 capitalize">{user.role}</p>
                 </div>
-                <svg
+                <FontAwesomeIcon
+                  icon={faChevronDown}
                   className={`w-4 h-4 text-white/50 transition-transform ${
                     userDropdownOpen ? "rotate-180" : ""
                   }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </div>
               {userDropdownOpen && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#145a63]/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-xl">
@@ -288,38 +281,17 @@ export default function Shell({
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/10 transition-colors"
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
+                    <FontAwesomeIcon icon={faUser} className="w-4 h-4" />
                     <span>Profile</span>
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/10 transition-colors"
                   >
-                    <svg
+                    <FontAwesomeIcon
+                      icon={faRightFromBracket}
                       className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
+                    />
                     <span>Logout</span>
                   </button>
                 </div>
@@ -348,19 +320,10 @@ export default function Shell({
                 onClick={() => setSidebarOpen(true)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <svg
+                <FontAwesomeIcon
+                  icon={faBars}
                   className="w-5 h-5 text-gray-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                />
               </button>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#1B6B7B] rounded-lg flex items-center justify-center p-1">
@@ -375,19 +338,10 @@ export default function Shell({
             <div className="flex items-center gap-2">
               {role !== "student" && (
                 <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                  <svg
+                  <FontAwesomeIcon
+                    icon={faBell}
                     className="w-5 h-5 text-gray-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
+                  />
                 </button>
               )}
               <span className="px-2 py-1.5 bg-gradient-to-r from-[#1B6B7B] to-[#145a63] text-white text-xs font-medium rounded-lg">
