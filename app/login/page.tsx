@@ -380,7 +380,7 @@ export default function LoginPage() {
               {/* Google button */}
               <div
                 ref={googleButtonRef}
-                className="w-full flex justify-center [&>div]:!w-full [&_iframe]:!w-full [&>div]:!min-w-full [&_iframe]:!min-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full"
+                className="w-full flex justify-center [&>div]:!w-full [&_iframe]:!w-full [&>div]:!min-w-full [&_iframe]:!min-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full [&_[role='button']]:!mx-auto"
               >
                 {isGoogleLoading ? (
                   <div className="w-full h-[44px] border border-[#E2E8F0] rounded-xl flex items-center justify-center gap-2.5 text-[#64748B] bg-[#F8FAFC] text-sm">
