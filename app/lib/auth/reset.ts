@@ -50,6 +50,7 @@ export async function storePasswordResetOtp(
 export async function verifyPasswordResetOtp(
   userId: string,
   plainOtp: string,
+  markUsed = true,
 ): Promise<boolean> {
   const supabase = getSupabaseAdmin();
 
@@ -69,8 +70,10 @@ export async function verifyPasswordResetOtp(
   const ok = await verifyPassword(plainOtp, data.otp_hash);
   if (!ok) return false;
 
-  // Mark as used immediately to prevent replay.
-  await supabase.from('password_resets').update({ used_at: new Date().toISOString() }).eq('id', data.id);
+  // Mark as used immediately to prevent replay unless we're only checking it.
+  if (markUsed) {
+    await supabase.from('password_resets').update({ used_at: new Date().toISOString() }).eq('id', data.id);
+  }
   return true;
 }
 

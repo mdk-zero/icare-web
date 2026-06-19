@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { GoogleOAuthProvider, GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { login, isAuthenticated, getCurrentUser, User } from "../lib/api";
@@ -29,9 +29,22 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleMounted, setGoogleMounted] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(0);
 
   useEffect(() => {
     setGoogleMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (googleButtonRef.current) {
+        setGoogleButtonWidth(googleButtonRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
   useEffect(() => {
@@ -365,7 +378,10 @@ export default function LoginPage() {
               </div>
 
               {/* Google button */}
-              <div className="w-full [&>div]:!w-full [&_iframe]:!w-full [&>div]:!min-w-full [&_iframe]:!min-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full">
+              <div
+                ref={googleButtonRef}
+                className="w-full flex justify-center [&>div]:!w-full [&_iframe]:!w-full [&>div]:!min-w-full [&_iframe]:!min-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full"
+              >
                 {isGoogleLoading ? (
                   <div className="w-full h-[44px] border border-[#E2E8F0] rounded-xl flex items-center justify-center gap-2.5 text-[#64748B] bg-[#F8FAFC] text-sm">
                     <svg
@@ -389,7 +405,7 @@ export default function LoginPage() {
                     </svg>
                     Signing in with Google...
                   </div>
-                ) : googleMounted ? (
+                ) : googleMounted && googleButtonWidth > 0 ? (
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={handleGoogleError}
@@ -399,6 +415,7 @@ export default function LoginPage() {
                     text="continue_with"
                     logo_alignment="left"
                     useOneTap={false}
+                    width={googleButtonWidth}
                   />
                 ) : (
                   <div className="w-full h-[44px] border border-[#E2E8F0] rounded-xl bg-[#F8FAFC]" />

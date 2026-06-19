@@ -466,16 +466,84 @@ export async function getDisplayAvatarUrl(
   return pictureUrl;
 }
 
-export async function changePassword(
+export async function requestPasswordChangeOtp(
   currentPassword: string,
-  newPassword: string,
+): Promise<{ success: boolean; requiresOtp?: boolean; devOtp?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/users/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ currentPassword }),
+    });
+
+    const data = (await res.json()) as {
+      success?: boolean;
+      requiresOtp?: boolean;
+      devOtp?: string;
+      error?: string;
+    };
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data.error || 'Unable to send verification code',
+      };
+    }
+    if (data.requiresOtp) {
+      return {
+        success: false,
+        requiresOtp: true,
+        devOtp: data.devOtp,
+        error: data.error,
+      };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('requestPasswordChangeOtp() failed', err);
+    return { success: false, error: 'Unable to send verification code' };
+  }
+}
+
+export async function verifyPasswordChangeOtp(
+  otp: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const res = await fetch('/api/users/change-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ currentPassword, newPassword }),
+      body: JSON.stringify({ otp, verifyOnly: true }),
+    });
+
+    const data = (await res.json()) as {
+      success?: boolean;
+      otpVerified?: boolean;
+      error?: string;
+    };
+    if (!res.ok || !data.otpVerified) {
+      return {
+        success: false,
+        error: data.error || 'Invalid or expired verification code',
+      };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('verifyPasswordChangeOtp() failed', err);
+    return { success: false, error: 'Unable to verify code' };
+  }
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  otp: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/users/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ currentPassword, newPassword, otp }),
     });
 
     const data = (await res.json()) as { success?: boolean; error?: string };
