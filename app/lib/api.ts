@@ -600,6 +600,16 @@ export interface FacultyStats {
   pending_scenarios: number;
 }
 
+export interface CreateStudentResponse {
+  student: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+  warning?: string;
+}
+
 export interface FacultyStudent {
   id: string;
   student_id: string;
@@ -1345,6 +1355,103 @@ export async function submitScenarioPerformance(
     total_tasks: 8,
     completed_at: new Date().toISOString(),
   };
+}
+
+export async function createFacultyStudent(
+  name: string,
+  email: string,
+): Promise<{ data?: CreateStudentResponse; error?: string }> {
+  try {
+    const res = await fetch('/api/faculty/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email }),
+    });
+
+    const json = await res.json() as { student?: CreateStudentResponse['student']; warning?: string; error?: string };
+
+    if (!res.ok) {
+      return { error: json.error || 'Unable to create student' };
+    }
+
+    return { data: { student: json.student!, warning: json.warning } };
+  } catch (err) {
+    console.error('createFacultyStudent() failed', err);
+    return { error: 'Unable to create student. Please try again.' };
+  }
+}
+
+export interface StudentUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  picture_url: string | null;
+}
+
+export async function fetchAllStudentUsers(): Promise<StudentUser[]> {
+  try {
+    const res = await fetch('/api/faculty/students');
+    const json = await res.json();
+
+    if (!res.ok) {
+      console.error('fetchAllStudentUsers() failed', json.error);
+      return [];
+    }
+
+    return json.students ?? [];
+  } catch (err) {
+    console.error('fetchAllStudentUsers() failed', err);
+    return [];
+  }
+}
+
+export async function updateStudentUser(
+  id: string,
+  name: string,
+  email: string,
+): Promise<{ data?: StudentUser; error?: string }> {
+  try {
+    const res = await fetch('/api/faculty/students', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name, email }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      return { error: json.error || 'Unable to update student' };
+    }
+
+    return { data: json.student };
+  } catch (err) {
+    console.error('updateStudentUser() failed', err);
+    return { error: 'Unable to update student. Please try again.' };
+  }
+}
+
+export async function deleteStudentUser(
+  id: string,
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/faculty/students', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      return { error: json.error || 'Unable to delete student' };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('deleteStudentUser() failed', err);
+    return { error: 'Unable to delete student. Please try again.' };
+  }
 }
 
 export async function fetchStudentScenarioHistory(studentId: string): Promise<ScenarioPerformance[]> {
