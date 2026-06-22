@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import Image from "next/image";
 import { GoogleOAuthProvider, GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { login, isAuthenticated, getCurrentUser, User } from "../lib/api";
@@ -36,7 +36,7 @@ export default function LoginPage() {
     setGoogleMounted(true);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const updateWidth = () => {
       if (googleButtonRef.current) {
         setGoogleButtonWidth(googleButtonRef.current.offsetWidth);
@@ -380,7 +380,7 @@ export default function LoginPage() {
               {/* Google button */}
               <div
                 ref={googleButtonRef}
-                className="w-full flex justify-center [&>div]:!w-full [&_iframe]:!w-full [&>div]:!min-w-full [&_iframe]:!min-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full [&_[role='button']]:!mx-auto"
+                className="w-full overflow-hidden [&>div]:!w-full [&_iframe]:!w-full [&>div]:!min-w-full [&_iframe]:!min-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full [&_[role='button']]:!mx-0"
               >
                 {isGoogleLoading ? (
                   <div className="w-full h-[44px] border border-[#E2E8F0] rounded-xl flex items-center justify-center gap-2.5 text-[#64748B] bg-[#F8FAFC] text-sm">
@@ -405,7 +405,7 @@ export default function LoginPage() {
                     </svg>
                     Signing in with Google...
                   </div>
-                ) : googleMounted && googleButtonWidth > 0 ? (
+                ) : googleMounted ? (
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={handleGoogleError}
@@ -415,7 +415,7 @@ export default function LoginPage() {
                     text="continue_with"
                     logo_alignment="left"
                     useOneTap={false}
-                    width={googleButtonWidth}
+                    width={googleButtonWidth || 400}
                   />
                 ) : (
                   <div className="w-full h-[44px] border border-[#E2E8F0] rounded-xl bg-[#F8FAFC]" />
