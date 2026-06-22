@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSession } from '@/app/lib/auth/session';
 import { getSupabaseAdmin } from '@/app/lib/supabase/server';
+import { toPublicUser } from '@/app/lib/auth/user';
 
 export async function GET() {
   const session = await readSession();
@@ -17,7 +18,7 @@ export async function GET() {
       .maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ user: null }, { status: 200 });
-    return NextResponse.json({ user: data });
+    return NextResponse.json({ user: toPublicUser(data) });
   } catch (err) {
     console.error('Session handler failed', err);
     return NextResponse.json({ user: null }, { status: 200 });

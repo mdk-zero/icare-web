@@ -1,35 +1,121 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-export type EmailResult = { success: true } | { success: false; error: string };
+let transporter: nodemailer.Transporter | null = null;
 
-function getClient(): Resend {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY is not configured in environment variables');
+let verified = false;
+
+function getTransporter(): nodemailer.Transporter {
+  if (!transporter) {
+    const host = process.env.SMTP_HOST;
+    const port = process.env.SMTP_PORT;
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+
+    if (!host || !port || !user || !pass) {
+      throw new Error(
+        'SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS must be configured in environment variables',
+      );
+    }
+
+    const portNumber = Number(port);
+    if (Number.isNaN(portNumber)) {
+      throw new Error('SMTP_PORT must be a valid number');
+    }
+
+    transporter = nodemailer.createTransport({
+      host,
+      port: portNumber,
+      secure: process.env.SMTP_SECURE === 'true' || portNumber === 465,
+      auth: {
+        user,
+        pass,
+      },
+    });
+
+    // Verify the connection on first use so auth errors surface early.
+    transporter.verify((err) => {
+      verified = true;
+      if (err) {
+        console.error('[SMTP] Connection verification failed:', err.message);
+      } else {
+        console.log('[SMTP] Connection verified successfully');
+      }
+    });
   }
-  return new Resend(apiKey);
+  return transporter;
 }
 
 function getFromEmail(): string {
-  const from = process.env.RESEND_FROM_EMAIL;
+  const from = process.env.SMTP_FROM_EMAIL;
   if (!from) {
-    throw new Error('RESEND_FROM_EMAIL is not configured in environment variables');
+    throw new Error('SMTP_FROM_EMAIL is not configured in environment variables');
   }
   return from;
 }
 
+function getFromName(): string {
+  return process.env.SMTP_FROM_NAME || 'iCARE++';
+}
+
 function shouldSkipSendInDev(): boolean {
-  // In development we skip Resend unless explicitly asked to send.
-  // Set RESEND_SEND_IN_DEV=true in .env.local to test real email delivery.
+  // In development we skip SMTP unless explicitly asked to send.
+  // Set SMTP_SEND_IN_DEV=true in .env.local to test real email delivery.
   return (
     process.env.NODE_ENV === 'development' &&
-    process.env.RESEND_SEND_IN_DEV !== 'true'
+    process.env.SMTP_SEND_IN_DEV !== 'true'
   );
 }
+
+export type EmailResult = { success: true } | { success: false; error: string };
 
 export interface EmailSendResult {
   skipped: boolean;
   otp?: string;
+}
+
+async function sendOtpEmail(
+  email: string,
+  otp: string,
+  name: string,
+  subject: string,
+  heading: string,
+  bodyText: string,
+  devLabel: string,
+): Promise<EmailSendResult> {
+  if (shouldSkipSendInDev()) {
+    console.log(`[DEV] ${devLabel} OTP for ${email}: ${otp}`);
+    return { skipped: true, otp };
+  }
+
+  const transport = getTransporter();
+  const fromEmail = getFromEmail();
+  const fromName = getFromName();
+
+  try {
+    const info = await transport.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: `"${name}" <${email}>`,
+      subject,
+      html: `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; color: #0f172a;">
+          <h2 style="color: #0d7377; margin-bottom: 16px;">${heading}</h2>
+          <p style="margin-bottom: 16px;">Hi ${name},</p>
+          <p style="margin-bottom: 24px;">${bodyText}</p>
+          <div style="background: #f0f9fa; border: 1px solid #d0ebea; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+            <span style="font-size: 32px; font-weight: 600; letter-spacing: 6px; color: #0d7377;">${otp}</span>
+          </div>
+          <p style="font-size: 13px; color: #64748b;">If you did not request this, you can safely ignore this email.</p>
+        </div>
+      `,
+    });
+    console.log(`[SMTP] ${devLabel} email sent to ${email}:`, info.messageId);
+  } catch (err) {
+    console.error('SMTP error:', err);
+    const message = err instanceof Error ? err.message : 'Failed to send email';
+    throw new Error(message);
+  }
+
+  return { skipped: false };
 }
 
 export async function sendPasswordResetOtp(
@@ -37,37 +123,15 @@ export async function sendPasswordResetOtp(
   otp: string,
   name: string,
 ): Promise<EmailSendResult> {
-  if (shouldSkipSendInDev()) {
-    console.log(`[DEV] Password reset OTP for ${email}: ${otp}`);
-    return { skipped: true, otp };
-  }
-
-  const resend = getClient();
-  const from = getFromEmail();
-
-  const { error } = await resend.emails.send({
-    from,
-    to: email,
-    subject: 'Your iCARE++ password reset code',
-    html: `
-      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; color: #0f172a;">
-        <h2 style="color: #0d7377; margin-bottom: 16px;">Password reset request</h2>
-        <p style="margin-bottom: 16px;">Hi ${name},</p>
-        <p style="margin-bottom: 24px;">We received a request to reset your iCARE++ password. Use the code below to continue. It will expire in 10 minutes.</p>
-        <div style="background: #f0f9fa; border: 1px solid #d0ebea; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
-          <span style="font-size: 32px; font-weight: 600; letter-spacing: 6px; color: #0d7377;">${otp}</span>
-        </div>
-        <p style="font-size: 13px; color: #64748b;">If you did not request this reset, you can safely ignore this email.</p>
-      </div>
-    `,
-  });
-
-  if (error) {
-    console.error('Resend error:', error);
-    throw new Error(error.message);
-  }
-
-  return { skipped: false };
+  return sendOtpEmail(
+    email,
+    otp,
+    name,
+    'Your iCARE++ password reset code',
+    'Password reset request',
+    'We received a request to reset your iCARE++ password. Use the code below to continue. It will expire in 10 minutes.',
+    'Password reset',
+  );
 }
 
 export async function sendPasswordChangeOtp(
@@ -75,37 +139,15 @@ export async function sendPasswordChangeOtp(
   otp: string,
   name: string,
 ): Promise<EmailSendResult> {
-  if (shouldSkipSendInDev()) {
-    console.log(`[DEV] Password change OTP for ${email}: ${otp}`);
-    return { skipped: true, otp };
-  }
-
-  const resend = getClient();
-  const from = getFromEmail();
-
-  const { error } = await resend.emails.send({
-    from,
-    to: email,
-    subject: 'Confirm your iCARE++ password change',
-    html: `
-      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; color: #0f172a;">
-        <h2 style="color: #0d7377; margin-bottom: 16px;">Confirm password change</h2>
-        <p style="margin-bottom: 16px;">Hi ${name},</p>
-        <p style="margin-bottom: 24px;">We received a request to change the password for your iCARE++ account. Use the code below to confirm this change. It will expire in 10 minutes.</p>
-        <div style="background: #f0f9fa; border: 1px solid #d0ebea; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
-          <span style="font-size: 32px; font-weight: 600; letter-spacing: 6px; color: #0d7377;">${otp}</span>
-        </div>
-        <p style="font-size: 13px; color: #64748b;">If you did not request this change, you can safely ignore this email.</p>
-      </div>
-    `,
-  });
-
-  if (error) {
-    console.error('Resend error:', error);
-    throw new Error(error.message);
-  }
-
-  return { skipped: false };
+  return sendOtpEmail(
+    email,
+    otp,
+    name,
+    'Confirm your iCARE++ password change',
+    'Confirm password change',
+    'We received a request to change the password for your iCARE++ account. Use the code below to confirm this change. It will expire in 10 minutes.',
+    'Password change',
+  );
 }
 
 function buildWelcomeHtml(name: string, loginUrl: string): string {
@@ -181,25 +223,26 @@ export async function sendStudentInvitationEmail(
   name: string,
   loginUrl: string,
 ): Promise<EmailResult> {
-  try {
-    const resend = getClient();
-    const from = getFromEmail();
+  if (shouldSkipSendInDev()) {
+    console.log(`[DEV] Student invitation email for ${email}: ${loginUrl}`);
+    return { success: true };
+  }
 
-    const { error } = await resend.emails.send({
-      from,
-      to: email,
+  const transport = getTransporter();
+  const fromEmail = getFromEmail();
+  const fromName = getFromName();
+
+  try {
+    const info = await transport.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: `"${name}" <${email}>`,
       subject: 'Welcome to iCARE++ – Your Account Has Been Created',
       html: buildWelcomeHtml(name, loginUrl),
     });
-
-    if (error) {
-      console.error('Resend error sending invitation:', error);
-      return { success: false, error: error.message };
-    }
-
+    console.log(`[SMTP] Invitation email sent to ${email}:`, info.messageId);
     return { success: true };
   } catch (err) {
-    console.error('Failed to send invitation email:', err);
+    console.error('SMTP error sending invitation:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }
 }
