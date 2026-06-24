@@ -36,7 +36,6 @@ export default function FacultyStudentsClient() {
   const [firstName, setFirstName] = useState("");
   const [middleInitial, setMiddleInitial] = useState("");
   const [lastName, setLastName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
   const newEmailRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
@@ -46,7 +45,6 @@ export default function FacultyStudentsClient() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updatingStudent, setUpdatingStudent] = useState<StudentUser | null>(null);
   const [updateName, setUpdateName] = useState("");
-  const [updateEmail, setUpdateEmail] = useState("");
   const updateEmailRef = useRef<HTMLInputElement>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -61,7 +59,7 @@ export default function FacultyStudentsClient() {
     const firstNameTrimmed = firstName.trim();
     const middleInitialTrimmed = middleInitial.trim();
     const lastNameTrimmed = lastName.trim();
-    const emailTrimmed = (newEmailRef.current?.value ?? newEmail).trim();
+    const emailTrimmed = (newEmailRef.current?.value ?? "").trim();
 
     if (!firstNameTrimmed) {
       setMessage({ type: "error", text: "First name is required" });
@@ -113,7 +111,6 @@ export default function FacultyStudentsClient() {
       setFirstName("");
       setMiddleInitial("");
       setLastName("");
-      setNewEmail("");
       if (newEmailRef.current) newEmailRef.current.value = "";
       loadStudents();
       loadStudentUsers();
@@ -129,7 +126,7 @@ export default function FacultyStudentsClient() {
     if (!updatingStudent) return;
 
     const nameTrimmed = updateName.trim();
-    const emailTrimmed = (updateEmailRef.current?.value ?? updateEmail).trim();
+    const emailTrimmed = (updateEmailRef.current?.value ?? "").trim();
 
     if (!nameTrimmed) {
       setMessage({ type: "error", text: "Student name is required" });
@@ -189,7 +186,6 @@ export default function FacultyStudentsClient() {
   const openUpdateModal = (student: StudentUser) => {
     setUpdatingStudent(student);
     setUpdateName(student.name);
-    setUpdateEmail(student.email);
     if (updateEmailRef.current) updateEmailRef.current.value = student.email;
     setShowUpdateModal(true);
     setMessage(null);
@@ -389,7 +385,6 @@ export default function FacultyStudentsClient() {
                   setFirstName("");
                   setMiddleInitial("");
                   setLastName("");
-                  setNewEmail("");
                   if (newEmailRef.current) newEmailRef.current.value = "";
                   setMessage(null);
                   setCreatedPassword(null);
@@ -475,8 +470,6 @@ export default function FacultyStudentsClient() {
                     id="new-student-email"
                     type="text"
                     ref={newEmailRef}
-                    defaultValue={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="@batstate-u.edu.ph"
                     className="relative z-10 w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
                   />
@@ -533,7 +526,7 @@ export default function FacultyStudentsClient() {
                     setFirstName("");
                     setMiddleInitial("");
                     setLastName("");
-                    setNewEmail("");
+                    if (newEmailRef.current) newEmailRef.current.value = "";
                     setMessage(null);
                     setCreatedPassword(null);
                     setCopiedPassword(false);
@@ -717,8 +710,6 @@ export default function FacultyStudentsClient() {
                     id="update-student-email"
                     type="text"
                     ref={updateEmailRef}
-                    defaultValue={updateEmail}
-                    onChange={(e) => setUpdateEmail(e.target.value)}
                     placeholder="student@example.edu"
                     className="relative z-10 w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
                   />
