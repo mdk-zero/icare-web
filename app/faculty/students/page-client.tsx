@@ -14,7 +14,15 @@ import {
   faSpinner,
   faTrashCan,
 } from "@fortawesome/free-solid-svg-icons";
-import { fetchFacultyStudents, createFacultyStudent, fetchAllStudentUsers, updateStudentUser, deleteStudentUser, FacultyStudent, StudentUser } from "../../lib/api";
+import {
+  fetchFacultyStudents,
+  createFacultyStudent,
+  fetchAllStudentUsers,
+  updateStudentUser,
+  deleteStudentUser,
+  FacultyStudent,
+  StudentUser,
+} from "../../lib/api";
 
 export default function FacultyStudentsClient() {
   const router = useRouter();
@@ -50,7 +58,10 @@ export default function FacultyStudentsClient() {
   const [lastName, setLastName] = useState("");
   const newEmailRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error" | "warning";
+    text: string;
+  } | null>(null);
   const [createdPassword, setCreatedPassword] = useState<string | null>(null);
   const [copiedPassword, setCopiedPassword] = useState(false);
 
@@ -93,7 +104,9 @@ export default function FacultyStudentsClient() {
       return;
     }
 
-    const duplicateEmail = students.some(s => s.email.toLowerCase() === emailTrimmed.toLowerCase());
+    const duplicateEmail = students.some(
+      (s) => s.email.toLowerCase() === emailTrimmed.toLowerCase(),
+    );
     if (duplicateEmail) {
       setMessage({ type: "warning", text: "A student with this email already exists" });
       return;
@@ -114,9 +127,15 @@ export default function FacultyStudentsClient() {
       }
 
       if (data?.warning) {
-        setMessage({ type: "warning", text: `${data.student.name} has been created. ${data.warning}` });
+        setMessage({
+          type: "warning",
+          text: `${data.student.name} has been created. ${data.warning}`,
+        });
       } else {
-        setMessage({ type: "success", text: `${data!.student.name} has been invited successfully!` });
+        setMessage({
+          type: "success",
+          text: `${data!.student.name} has been invited successfully!`,
+        });
       }
 
       setCreatedPassword(data?.password ?? null);
@@ -153,7 +172,11 @@ export default function FacultyStudentsClient() {
     setIsUpdating(true);
 
     try {
-      const { data, error } = await updateStudentUser(updatingStudent.id, nameTrimmed, emailTrimmed);
+      const { data, error } = await updateStudentUser(
+        updatingStudent.id,
+        nameTrimmed,
+        emailTrimmed,
+      );
 
       if (error) {
         setMessage({ type: "error", text: error });
@@ -184,7 +207,10 @@ export default function FacultyStudentsClient() {
         return;
       }
 
-      setMessage({ type: "success", text: `${deletingStudent.name} has been deleted successfully!` });
+      setMessage({
+        type: "success",
+        text: `${deletingStudent.name} has been deleted successfully!`,
+      });
       setShowDeleteModal(false);
       setDeletingStudent(null);
       loadStudentUsers();
@@ -210,29 +236,35 @@ export default function FacultyStudentsClient() {
   };
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'high': return 'bg-red-100 text-red-700 border-red-200';
-      case 'medium': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'low': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case "high":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "medium":
+        return "bg-amber-100 text-amber-700 border-amber-200";
+      case "low":
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-emerald-600';
-    if (score >= 60) return 'text-amber-600';
-    return 'text-red-600';
+    if (score >= 80) return "text-emerald-600";
+    if (score >= 60) return "text-amber-600";
+    return "text-red-600";
   };
 
-  const filteredStudents = students.filter(student => 
-    searchQuery === "" || 
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStudents = students.filter(
+    (student) =>
+      searchQuery === "" ||
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const filteredStudentUsers = studentUsers.filter(user =>
-    searchQuery === "" ||
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStudentUsers = studentUsers.filter(
+    (user) =>
+      searchQuery === "" ||
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -260,7 +292,9 @@ export default function FacultyStudentsClient() {
               <FontAwesomeIcon icon={faTriangleExclamation} className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-800">{students.filter(s => s.risk_level === 'high').length}</p>
+              <p className="text-2xl font-bold text-gray-800">
+                {students.filter((s) => s.risk_level === "high").length}
+              </p>
               <p className="text-xs text-gray-500">High Risk</p>
             </div>
           </div>
@@ -271,7 +305,9 @@ export default function FacultyStudentsClient() {
               <FontAwesomeIcon icon={faTriangleExclamation} className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-800">{students.filter(s => s.risk_level === 'medium').length}</p>
+              <p className="text-2xl font-bold text-gray-800">
+                {students.filter((s) => s.risk_level === "medium").length}
+              </p>
               <p className="text-xs text-gray-500">Medium Risk</p>
             </div>
           </div>
@@ -281,7 +317,13 @@ export default function FacultyStudentsClient() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => { setShowCreateModal(true); setMessage(null); setCreatedPassword(null); setCopiedPassword(false); if (newEmailRef.current) newEmailRef.current.value = ""; }}
+            onClick={() => {
+              setShowCreateModal(true);
+              setMessage(null);
+              setCreatedPassword(null);
+              setCopiedPassword(false);
+              if (newEmailRef.current) newEmailRef.current.value = "";
+            }}
             className="px-4 py-2.5 bg-[#1B6B7B] text-white font-medium rounded-xl hover:bg-[#145A63] transition-all flex items-center gap-2 shadow-sm"
           >
             <FontAwesomeIcon icon={faPlus} className="w-5 h-5" />
@@ -295,7 +337,10 @@ export default function FacultyStudentsClient() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all w-64"
             />
-            <FontAwesomeIcon icon={faMagnifyingGlass} className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+            />
           </div>
           <select
             value={riskFilter}
@@ -308,72 +353,6 @@ export default function FacultyStudentsClient() {
             <option value="low">Low Risk</option>
           </select>
         </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-[#1B6B7B]/30 transition-all duration-300 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="w-8 h-8 border-4 border-[#1B6B7B] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-600">Student</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-600">Program</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-600">Avg Score</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-600">Quizzes</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-600">Risk Level</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-600">Last Active</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredStudents.map((student) => (
-                  <tr 
-                    key={student.id} 
-                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/faculty/students/${student.student_id}`)}
-                  >
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#1B6B7B]/10 rounded-full flex items-center justify-center text-[#1B6B7B] font-semibold">
-                          {student.name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-800">{student.name}</p>
-                          <p className="text-sm text-gray-500">{student.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-gray-600">
-                      {student.program} - Year {student.year}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`font-semibold ${getScoreColor(student.average_score)}`}>
-                        {student.average_score}%
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-600">{student.quiz_count}</td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getRiskColor(student.risk_level)}`}>
-                        {student.risk_level.charAt(0).toUpperCase() + student.risk_level.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-500">{student.last_activity}</td>
-                  </tr>
-                ))}
-                {filteredStudents.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500">
-                      No students found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
 
       {showCreateModal && (
@@ -398,7 +377,10 @@ export default function FacultyStudentsClient() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateStudent} className="p-7 space-y-6 overflow-y-auto flex-1 min-h-0">
+            <form
+              onSubmit={handleCreateStudent}
+              className="p-7 space-y-6 overflow-y-auto flex-1 min-h-0"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Student Name <span className="text-red-500">*</span>
@@ -451,7 +433,10 @@ export default function FacultyStudentsClient() {
               </div>
 
               <div>
-                <label htmlFor="new-student-email" className="block text-sm font-medium text-gray-700 mb-3">
+                <label
+                  htmlFor="new-student-email"
+                  className="block text-sm font-medium text-gray-700 mb-3"
+                >
                   Student Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -469,13 +454,15 @@ export default function FacultyStudentsClient() {
               </div>
 
               {message && showCreateModal && (
-                <div className={`p-3 rounded-lg text-sm border ${
-                  message.type === "success"
-                    ? "bg-green-50 text-green-700 border-green-200"
-                    : message.type === "warning"
-                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                    : "bg-red-50 text-red-700 border-red-200"
-                }`}>
+                <div
+                  className={`p-3 rounded-lg text-sm border ${
+                    message.type === "success"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : message.type === "warning"
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                        : "bg-red-50 text-red-700 border-red-200"
+                  }`}
+                >
                   {message.text}
                 </div>
               )}
@@ -483,7 +470,8 @@ export default function FacultyStudentsClient() {
               {createdPassword && (
                 <div className="p-4 rounded-xl border border-[#1B6B7B]/20 bg-[#1B6B7B]/5">
                   <p className="text-sm font-medium text-[#1B6B7B] mb-2">
-                    Temporary password for {firstName ? `${firstName} ` : ""}{lastName}
+                    Temporary password for {firstName ? `${firstName} ` : ""}
+                    {lastName}
                   </p>
                   <div className="flex items-center gap-2">
                     <input
@@ -505,7 +493,8 @@ export default function FacultyStudentsClient() {
                     </button>
                   </div>
                   <p className="text-xs text-[#1B6B7B]/70 mt-2">
-                    This password has been emailed to the student. They will be asked to change it on first login.
+                    This password has been emailed to the student. They will be asked to change it
+                    on first login.
                   </p>
                 </div>
               )}
@@ -548,11 +537,6 @@ export default function FacultyStudentsClient() {
       )}
 
       <div className="mt-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Student Accounts</h2>
-          <p className="text-gray-500">All registered users with the student role</p>
-        </div>
-
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-[#1B6B7B]/30 transition-all duration-300 overflow-hidden">
           {loadingStudentUsers ? (
             <div className="overflow-x-auto">
@@ -657,7 +641,10 @@ export default function FacultyStudentsClient() {
             <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">Update Student</h2>
               <button
-                onClick={() => { setShowUpdateModal(false); setUpdatingStudent(null); }}
+                onClick={() => {
+                  setShowUpdateModal(false);
+                  setUpdatingStudent(null);
+                }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
               >
                 <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
@@ -682,7 +669,10 @@ export default function FacultyStudentsClient() {
                 </div>
               </div>
               <div>
-                <label htmlFor="update-student-email" className="block text-sm font-medium text-gray-700 mb-3">
+                <label
+                  htmlFor="update-student-email"
+                  className="block text-sm font-medium text-gray-700 mb-3"
+                >
                   Student Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -701,7 +691,10 @@ export default function FacultyStudentsClient() {
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => { setShowUpdateModal(false); setUpdatingStudent(null); }}
+                  onClick={() => {
+                    setShowUpdateModal(false);
+                    setUpdatingStudent(null);
+                  }}
                   className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
                 >
                   Cancel
@@ -732,7 +725,10 @@ export default function FacultyStudentsClient() {
             <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">Delete Student</h2>
               <button
-                onClick={() => { setShowDeleteModal(false); setDeletingStudent(null); }}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingStudent(null);
+                }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
               >
                 <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
@@ -740,13 +736,18 @@ export default function FacultyStudentsClient() {
             </div>
             <div className="p-7">
               <p className="text-gray-600 text-sm">
-                Are you sure you want to delete <span className="font-semibold text-gray-900">{deletingStudent.name}</span>? This action cannot be undone.
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-gray-900">{deletingStudent.name}</span>? This
+                action cannot be undone.
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-7 py-5 border-t border-gray-100">
               <button
                 type="button"
-                onClick={() => { setShowDeleteModal(false); setDeletingStudent(null); }}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingStudent(null);
+                }}
                 className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
               >
                 Cancel
@@ -772,3 +773,4 @@ export default function FacultyStudentsClient() {
     </div>
   );
 }
+
