@@ -463,7 +463,7 @@ export default function FacultyStudentsClient() {
                     type="text"
                     ref={newEmailRef}
                     placeholder="@batstate-u.edu.ph"
-                    className="relative z-10 w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
                   />
                 </div>
               </div>
@@ -694,7 +694,7 @@ export default function FacultyStudentsClient() {
                     type="text"
                     ref={updateEmailRef}
                     placeholder="student@example.edu"
-                    className="relative z-10 w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
                   />
                 </div>
               </div>
