@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { GoogleOAuthProvider, GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { login, isAuthenticated, getCurrentUser, User } from "../lib/api";
@@ -34,16 +34,24 @@ export default function LoginPage() {
     setGoogleMounted(true);
   }, []);
 
+  const redirectAfterAuth = useCallback((user: User) => {
+    if (user.force_password_change) {
+      router.push("/change-password");
+      return;
+    }
+    router.push(
+      user.role === "student" ? "/dashboard" : user.role === "faculty" ? "/faculty" : "/admin",
+    );
+  }, [router]);
+
   useEffect(() => {
     if (isAuthenticated()) {
       const user = getCurrentUser();
       if (user) {
-        router.push(
-          user.role === "student" ? "/dashboard" : user.role === "faculty" ? "/faculty" : "/admin",
-        );
+        redirectAfterAuth(user);
       }
     }
-  }, [router]);
+  }, [redirectAfterAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +62,7 @@ export default function LoginPage() {
       const result = await login(email, password);
 
       if (result) {
-        const user = result.user as User;
-        router.push(
-          user.role === "student" ? "/dashboard" : user.role === "faculty" ? "/faculty" : "/admin",
-        );
+        redirectAfterAuth(result.user);
       } else {
         setError("Invalid email or password");
       }
@@ -100,9 +105,7 @@ export default function LoginPage() {
       const user = data.user as User;
       localStorage.setItem("icare_user", JSON.stringify(user));
       localStorage.setItem("icare_token", "logged_in");
-      router.push(
-        user.role === "student" ? "/dashboard" : user.role === "faculty" ? "/faculty" : "/admin",
-      );
+      redirectAfterAuth(user);
     } catch {
       setError("Google sign-in failed. Please try again.");
       setIsGoogleLoading(false);

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const supabase = getSupabaseAdmin();
     const { data: user, error: fetchError } = await supabase
       .from('users')
-      .select('id, password_hash')
+      .select('id, password_hash, force_password_change')
       .eq('id', session.uid)
       .maybeSingle();
 
@@ -51,7 +51,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.password_hash) {
+    const isForcedChange = user.force_password_change === true;
+
+    if (!isForcedChange && user.password_hash) {
       if (
         typeof currentPassword !== 'string' ||
         currentPassword.length === 0
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
     const newHash = await hashPassword(newPassword);
     const { error: updateError } = await supabase
       .from('users')
-      .update({ password_hash: newHash })
+      .update({ password_hash: newHash, force_password_change: false })
       .eq('id', session.uid);
 
     if (updateError) throw updateError;

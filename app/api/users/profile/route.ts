@@ -13,7 +13,7 @@ export async function GET() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('users')
-      .select('id, email, name, role, picture_url, password_hash')
+      .select('id, email, name, role, picture_url, password_hash, force_password_change')
       .eq('id', session.uid)
       .maybeSingle();
 
@@ -58,7 +58,7 @@ export async function PATCH(request: Request) {
       .from('users')
       .update({ name: trimmedName })
       .eq('id', session.uid)
-      .select('id, email, name, role, picture_url, password_hash')
+      .select('id, email, name, role, picture_url, password_hash, force_password_change')
       .single();
 
     if (error) throw error;

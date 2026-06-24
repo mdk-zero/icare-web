@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         role: selectedRole,
         password_hash: passwordHash,
       })
-      .select('id, email, name, role, picture_url, password_hash')
+      .select('id, email, name, role, picture_url, password_hash, force_password_change')
       .single();
 
     if (error) {

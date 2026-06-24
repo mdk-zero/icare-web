@@ -39,6 +39,8 @@ export default function FacultyStudentsClient() {
   const [newEmail, setNewEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
+  const [createdPassword, setCreatedPassword] = useState<string | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updatingStudent, setUpdatingStudent] = useState<StudentUser | null>(null);
@@ -105,11 +107,11 @@ export default function FacultyStudentsClient() {
         setMessage({ type: "success", text: `${data!.student.name} has been invited successfully!` });
       }
 
+      setCreatedPassword(data?.password ?? null);
       setFirstName("");
       setMiddleInitial("");
       setLastName("");
       setNewEmail("");
-      setShowCreateModal(false);
       loadStudents();
       loadStudentUsers();
     } catch {
@@ -301,7 +303,7 @@ export default function FacultyStudentsClient() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => { setShowCreateModal(true); setMessage(null); }}
+            onClick={() => { setShowCreateModal(true); setMessage(null); setCreatedPassword(null); setCopiedPassword(false); }}
             className="px-4 py-2.5 bg-[#1B6B7B] text-white font-medium rounded-xl hover:bg-[#145A63] transition-all flex items-center gap-2 shadow-sm"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -406,7 +408,16 @@ export default function FacultyStudentsClient() {
             <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">Create New Student</h2>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setFirstName("");
+                  setMiddleInitial("");
+                  setLastName("");
+                  setNewEmail("");
+                  setMessage(null);
+                  setCreatedPassword(null);
+                  setCopiedPassword(false);
+                }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -474,7 +485,7 @@ export default function FacultyStudentsClient() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label htmlFor="new-student-email" className="block text-sm font-medium text-gray-700 mb-3">
                   Student Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -484,7 +495,11 @@ export default function FacultyStudentsClient() {
                     </svg>
                   </div>
                   <input
-                    type="email"
+                    id="new-student-email"
+                    name="new-student-email"
+                    type="text"
+                    inputMode="email"
+                    autoComplete="off"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="@batstate-u.edu.ph"
@@ -505,6 +520,36 @@ export default function FacultyStudentsClient() {
                 </div>
               )}
 
+              {createdPassword && (
+                <div className="p-4 rounded-xl border border-[#1B6B7B]/20 bg-[#1B6B7B]/5">
+                  <p className="text-sm font-medium text-[#1B6B7B] mb-2">
+                    Temporary password for {firstName ? `${firstName} ` : ""}{lastName}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={createdPassword}
+                      className="flex-1 px-3 py-2 bg-white border border-[#1B6B7B]/20 rounded-lg text-sm font-mono text-gray-800 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdPassword);
+                        setCopiedPassword(true);
+                        setTimeout(() => setCopiedPassword(false), 2000);
+                      }}
+                      className="px-3 py-2 text-sm font-medium text-[#1B6B7B] bg-white border border-[#1B6B7B]/20 rounded-lg hover:bg-[#1B6B7B]/10 transition-all"
+                    >
+                      {copiedPassword ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#1B6B7B]/70 mt-2">
+                    This password has been emailed to the student. They will be asked to change it on first login.
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-3 pt-2 flex-shrink-0">
                 <button
                   type="button"
@@ -515,10 +560,12 @@ export default function FacultyStudentsClient() {
                     setLastName("");
                     setNewEmail("");
                     setMessage(null);
+                    setCreatedPassword(null);
+                    setCopiedPassword(false);
                   }}
                   className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="submit"
@@ -682,7 +729,7 @@ export default function FacultyStudentsClient() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label htmlFor="update-student-email" className="block text-sm font-medium text-gray-700 mb-3">
                   Student Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -692,7 +739,11 @@ export default function FacultyStudentsClient() {
                     </svg>
                   </div>
                   <input
-                    type="email"
+                    id="update-student-email"
+                    name="update-student-email"
+                    type="text"
+                    inputMode="email"
+                    autoComplete="off"
                     value={updateEmail}
                     onChange={(e) => setUpdateEmail(e.target.value)}
                     placeholder="student@example.edu"

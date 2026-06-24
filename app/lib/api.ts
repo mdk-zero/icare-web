@@ -5,6 +5,7 @@ export interface User {
   role: 'student' | 'faculty' | 'admin';
   picture_url?: string | null;
   has_password?: boolean;
+  force_password_change?: boolean;
 }
 
 const USER_STORAGE_KEY = 'icare_user';
@@ -539,6 +540,7 @@ export interface CreateStudentResponse {
     name: string;
     role: string;
   };
+  password?: string;
   warning?: string;
 }
 
@@ -1300,13 +1302,13 @@ export async function createFacultyStudent(
       body: JSON.stringify({ name, email }),
     });
 
-    const json = await res.json() as { student?: CreateStudentResponse['student']; warning?: string; error?: string };
+    const json = await res.json() as { student?: CreateStudentResponse['student']; password?: string; warning?: string; error?: string };
 
     if (!res.ok) {
       return { error: json.error || 'Unable to create student' };
     }
 
-    return { data: { student: json.student!, warning: json.warning } };
+    return { data: { student: json.student!, password: json.password, warning: json.warning } };
   } catch (err) {
     console.error('createFacultyStudent() failed', err);
     return { error: 'Unable to create student. Please try again.' };

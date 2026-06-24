@@ -17,6 +17,7 @@ create table if not exists public.users (
   picture_url text,
   role user_role not null default 'student',
   password_hash text,
+  force_password_change boolean not null default false,
   created_at timestamptz not null default now(),
   last_login_at timestamptz
 );

@@ -7,10 +7,11 @@ export interface PublicUser {
   role: UserRole;
   picture_url: string | null;
   has_password: boolean;
+  force_password_change: boolean;
 }
 
 export function toPublicUser(
-  row: Pick<DbUser, 'id' | 'email' | 'name' | 'role' | 'picture_url' | 'password_hash'>,
+  row: Pick<DbUser, 'id' | 'email' | 'name' | 'role' | 'picture_url' | 'password_hash' | 'force_password_change'>,
 ): PublicUser {
   return {
     id: row.id,
@@ -19,6 +20,7 @@ export function toPublicUser(
     role: row.role,
     picture_url: row.picture_url,
     has_password: Boolean(row.password_hash),
+    force_password_change: row.force_password_change,
   };
 }
 
@@ -26,7 +28,7 @@ export async function findUserByEmail(email: string) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from('users')
-    .select('id, email, name, role, picture_url, password_hash')
+    .select('id, email, name, role, picture_url, password_hash, force_password_change')
     .eq('email', email)
     .maybeSingle();
   if (error) throw error;
@@ -37,7 +39,7 @@ export async function findUserByGoogleSub(sub: string) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from('users')
-    .select('id, email, name, role, picture_url, password_hash')
+    .select('id, email, name, role, picture_url, password_hash, force_password_change')
     .eq('google_sub', sub)
     .maybeSingle();
   if (error) throw error;
@@ -63,7 +65,7 @@ export async function upsertGoogleUser(profile: {
       },
       { onConflict: 'google_sub' },
     )
-    .select('id, email, name, role, picture_url, password_hash')
+    .select('id, email, name, role, picture_url, password_hash, force_password_change')
     .single();
   if (error) throw error;
   return data;
@@ -89,7 +91,7 @@ export async function createGoogleUser(
       role,
       last_login_at: new Date().toISOString(),
     })
-    .select('id, email, name, role, picture_url, password_hash')
+    .select('id, email, name, role, picture_url, password_hash, force_password_change')
     .single();
   if (error) throw error;
   return data;
