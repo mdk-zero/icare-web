@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabase/server';
 import { sendStudentInvitationEmail } from '@/app/lib/auth/email';
+import { generateRandomPassword, hashPassword } from '@/app/lib/auth/password';
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -69,16 +70,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const tempPassword = generateRandomPassword();
+    const passwordHash = await hashPassword(tempPassword);
+
     const { data: student, error: insertError } = await supabase
       .from('users')
       .insert({
         email: normalizedEmail,
         name: trimmedName,
         role: 'student',
-        password_hash: null,
+        password_hash: passwordHash,
+        force_password_change: true,
         picture_url: null,
       })
-      .select('id, email, name, role, picture_url, password_hash')
+      .select('id, email, name, role, picture_url, password_hash, force_password_change')
       .single();
 
     if (insertError) {
@@ -89,13 +94,14 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get('origin') ?? 'http://localhost:3000';
     const loginUrl = `${origin}/login`;
 
-    const emailResult = await sendStudentInvitationEmail(normalizedEmail, trimmedName, loginUrl);
+    const emailResult = await sendStudentInvitationEmail(normalizedEmail, trimmedName, loginUrl, tempPassword);
 
     if (!emailResult.success) {
       return NextResponse.json(
         {
           student: { id: student.id, email: student.email, name: student.name, role: student.role },
-          warning: 'Student created but the invitation email could not be sent. Please contact your system administrator to verify the email configuration.',
+          password: tempPassword,
+          warning: 'Student created but the invitation email could not be sent. Please share the temporary password below with the student.',
         },
         { status: 201 },
       );
@@ -104,6 +110,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         student: { id: student.id, email: student.email, name: student.name, role: student.role },
+        password: tempPassword,
       },
       { status: 201 },
     );

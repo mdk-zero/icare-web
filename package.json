@@ -19,7 +19,7 @@
     "google-auth-library": "^10.7.0",
     "jose": "^6.2.3",
     "next": "16.2.4",
-    "nodemailer": "^6.10.0",
+    "nodemailer": "^9.0.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -27,7 +27,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
-    "@types/nodemailer": "^6.4.17",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.4.2",

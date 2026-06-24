@@ -30,6 +30,7 @@ export interface DbUser {
   picture_url: string | null;
   role: UserRole;
   password_hash: string | null;
+  force_password_change: boolean;
   created_at: string;
   last_login_at: string | null;
 }

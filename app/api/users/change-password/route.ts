@@ -34,11 +34,25 @@ export async function POST(request: Request) {
     verifyOnly?: unknown;
   };
 
+  if (typeof newPassword !== 'string' || newPassword.length === 0) {
+    return NextResponse.json(
+      { error: 'New password is required' },
+      { status: 400 },
+    );
+  }
+
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json(
+      { error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` },
+      { status: 400 },
+    );
+  }
+
   try {
     const supabase = getSupabaseAdmin();
     const { data: user, error: fetchError } = await supabase
       .from('users')
-      .select('id, email, name, password_hash')
+      .select('id, email, name, password_hash, force_password_change')
       .eq('id', session.uid)
       .maybeSingle();
 
@@ -48,6 +62,21 @@ export async function POST(request: Request) {
         { error: 'User not found' },
         { status: 404 },
       );
+    }
+
+    const isForcedChange = user.force_password_change === true;
+
+    // Forced first-login password change: skip OTP/current-password verification.
+    if (isForcedChange) {
+      const newHash = await hashPassword(newPassword);
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ password_hash: newHash, force_password_change: false })
+        .eq('id', session.uid);
+
+      if (updateError) throw updateError;
+
+      return NextResponse.json({ success: true });
     }
 
     const hasPassword = Boolean(user.password_hash);
@@ -117,20 +146,6 @@ export async function POST(request: Request) {
     }
 
     // Step 3: verify the OTP and update the password.
-    if (typeof newPassword !== 'string' || newPassword.length === 0) {
-      return NextResponse.json(
-        { error: 'New password is required' },
-        { status: 400 },
-      );
-    }
-
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      return NextResponse.json(
-        { error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` },
-        { status: 400 },
-      );
-    }
-
     const otpValid = await verifyPasswordResetOtp(user.id, otp.trim());
     if (!otpValid) {
       return NextResponse.json(
@@ -139,30 +154,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (hasPassword) {
-      if (
-        typeof currentPassword !== 'string' ||
-        currentPassword.length === 0
-      ) {
-        return NextResponse.json(
-          { error: 'Current password is required' },
-          { status: 400 },
-        );
-      }
-
-      const valid = await verifyPassword(currentPassword, user.password_hash!);
-      if (!valid) {
-        return NextResponse.json(
-          { error: 'Current password is incorrect' },
-          { status: 401 },
-        );
-      }
-    }
-
     const newHash = await hashPassword(newPassword);
     const { error: updateError } = await supabase
       .from('users')
-      .update({ password_hash: newHash })
+      .update({ password_hash: newHash, force_password_change: false })
       .eq('id', session.uid);
 
     if (updateError) throw updateError;

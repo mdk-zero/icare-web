@@ -16,7 +16,7 @@ export async function findUserForPasswordReset(email: string): Promise<Resetable
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from('users')
-    .select('id, email, name, password_hash')
+    .select('id, email, name, password_hash, force_password_change')
     .eq('email', email.trim().toLowerCase())
     .maybeSingle();
 
@@ -83,7 +83,7 @@ export async function updateUserPassword(userId: string, newPassword: string): P
 
   const { error } = await supabase
     .from('users')
-    .update({ password_hash: passwordHash })
+    .update({ password_hash: passwordHash, force_password_change: false })
     .eq('id', userId);
 
   if (error) throw error;
