@@ -1,0 +1,1368 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'student' | 'faculty' | 'admin';
+  picture_url?: string | null;
+  has_password?: boolean;
+}
+
+const USER_STORAGE_KEY = 'icare_user';
+const TOKEN_STORAGE_KEY = 'icare_token';
+const SESSION_ENDPOINT = '/api/auth/session';
+
+function mirrorToStorage(user: User | null) {
+  if (typeof window === 'undefined') return;
+  if (user) {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    localStorage.setItem(TOKEN_STORAGE_KEY, 'logged_in');
+  } else {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+}
+
+export interface Patient {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  room_number: string;
+  diagnosis: string;
+  vital_signs: {
+    heart_rate: number | null;
+    blood_pressure: string | null;
+    temperature: number | null;
+    respiratory_rate: number | null;
+    oxygen_saturation: number | null;
+  };
+  created_by: string;
+  created_at: string;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: string;
+  created_at: string;
+}
+
+export interface Question {
+  id: string;
+  quiz_id: string;
+  content: string;
+  options: string[];
+  correct_answer: number;
+  explanation: string;
+  competencies: string[];
+}
+
+export interface PerformanceLog {
+  id: string;
+  user_id: string;
+  quiz_id: string;
+  score: number;
+  time_taken: number;
+  answers: { question_id: string; answer: number; correct: boolean }[];
+  created_at: string;
+}
+
+// Mock Data Generators
+const generateMockPatients = (): Patient[] => [
+  {
+    id: 'patient-001',
+    name: 'Juan Reyes',
+    age: 68,
+    gender: 'M',
+    room_number: 'Room 101',
+    diagnosis: 'Acute Myocardial Infarction',
+    vital_signs: {
+      heart_rate: 98,
+      blood_pressure: '140/90',
+      temperature: 37.2,
+      respiratory_rate: 20,
+      oxygen_saturation: 96,
+    },
+    created_by: 'student-001',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'patient-002',
+    name: 'Maria Santos',
+    age: 45,
+    gender: 'F',
+    room_number: 'Room 102',
+    diagnosis: 'Type 2 Diabetes',
+    vital_signs: {
+      heart_rate: 72,
+      blood_pressure: '120/80',
+      temperature: 37.0,
+      respiratory_rate: 16,
+      oxygen_saturation: 98,
+    },
+    created_by: 'student-001',
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'patient-003',
+    name: 'Carlos Diaz',
+    age: 55,
+    gender: 'M',
+    room_number: 'Room 103',
+    diagnosis: 'Hypertension',
+    vital_signs: {
+      heart_rate: 85,
+      blood_pressure: '150/95',
+      temperature: 36.8,
+      respiratory_rate: 18,
+      oxygen_saturation: 97,
+    },
+    created_by: 'student-001',
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+const generateMockQuizzes = (): Quiz[] => [
+  {
+    id: 'quiz-001',
+    title: 'Cardiac Assessment Basics',
+    description: 'Learn the fundamentals of cardiac patient assessment',
+    difficulty: 'beginner',
+    category: 'Cardiac Care',
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'quiz-002',
+    title: 'Diabetes Management',
+    description: 'Assessment of diabetes care protocols',
+    difficulty: 'intermediate',
+    category: 'Endocrinology',
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'quiz-003',
+    title: 'Hypertension Crisis Response',
+    description: 'Advanced management of hypertensive emergencies',
+    difficulty: 'advanced',
+    category: 'Emergency Care',
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'quiz-004',
+    title: 'Patient Communication Skills',
+    description: 'Effective communication with patients and families',
+    difficulty: 'beginner',
+    category: 'Soft Skills',
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+const generateMockQuestions = (quizId: string): Question[] => {
+  const questionMap: Record<string, Question[]> = {
+    'quiz-001': [
+      {
+        id: 'q-001-1',
+        quiz_id: 'quiz-001',
+        content: 'What is the normal resting heart rate for adults?',
+        options: ['40-60 bpm', '60-100 bpm', '100-120 bpm', '120-150 bpm'],
+        correct_answer: 1,
+        explanation: 'The normal resting heart rate for adults is typically between 60-100 beats per minute.',
+        competencies: ['Vital Signs', 'Cardiac Assessment'],
+      },
+      {
+        id: 'q-001-2',
+        quiz_id: 'quiz-001',
+        content: 'Which of the following indicates an abnormal heart rhythm?',
+        options: ['Regular pulse at 75 bpm', 'Irregular pulse with variations', 'Pulse at 90 bpm', 'All are normal'],
+        correct_answer: 1,
+        explanation: 'An irregular pulse with variations may indicate arrhythmia and requires further investigation.',
+        competencies: ['Cardiac Assessment', 'Clinical Judgment'],
+      },
+    ],
+    'quiz-002': [
+      {
+        id: 'q-002-1',
+        quiz_id: 'quiz-002',
+        content: 'What is the primary goal of diabetes management?',
+        options: [
+          'Eliminate insulin usage',
+          'Maintain blood glucose within target range',
+          'Increase dietary sugar intake',
+          'Reduce all medications',
+        ],
+        correct_answer: 1,
+        explanation: 'The primary goal is to maintain blood glucose levels within the target range to prevent complications.',
+        competencies: ['Diabetes Care', 'Patient Education'],
+      },
+    ],
+    'quiz-003': [
+      {
+        id: 'q-003-1',
+        quiz_id: 'quiz-003',
+        content: 'What is considered a hypertensive emergency?',
+        options: [
+          'BP > 140/90 mmHg',
+          'BP > 180/120 mmHg with end-organ damage',
+          'Any BP reading above baseline',
+          'BP that increases during stress',
+        ],
+        correct_answer: 1,
+        explanation: 'A hypertensive emergency is defined as BP > 180/120 mmHg accompanied by signs of end-organ damage.',
+        competencies: ['Emergency Response', 'Critical Thinking'],
+      },
+    ],
+    'quiz-004': [
+      {
+        id: 'q-004-1',
+        quiz_id: 'quiz-004',
+        content: 'How should you introduce yourself to a new patient?',
+        options: [
+          'State only your name',
+          'State your name, role, and purpose of your visit',
+          'Ask them questions immediately',
+          'Wait for them to speak first',
+        ],
+        correct_answer: 1,
+        explanation: 'Building rapport requires introducing yourself with your role to establish professional communication.',
+        competencies: ['Communication', 'Patient Relations'],
+      },
+    ],
+  };
+
+  return questionMap[quizId] || [];
+};
+
+const generateMockPerformanceLogs = (userId: string): PerformanceLog[] => [
+  {
+    id: 'perf-001',
+    user_id: userId,
+    quiz_id: 'quiz-001',
+    score: 85,
+    time_taken: 1200,
+    answers: [
+      { question_id: 'q-001-1', answer: 1, correct: true },
+      { question_id: 'q-001-2', answer: 1, correct: true },
+    ],
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'perf-002',
+    user_id: userId,
+    quiz_id: 'quiz-002',
+    score: 72,
+    time_taken: 1500,
+    answers: [
+      { question_id: 'q-002-1', answer: 1, correct: true },
+    ],
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'perf-003',
+    user_id: userId,
+    quiz_id: 'quiz-004',
+    score: 90,
+    time_taken: 900,
+    answers: [
+      { question_id: 'q-004-1', answer: 1, correct: true },
+    ],
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+// Authentication Functions
+export async function login(email: string, password: string): Promise<{ user: User; sessionToken: string } | null> {
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) return null;
+    const { user, sessionToken } = (await res.json()) as { user: User; sessionToken: string };
+    mirrorToStorage(user);
+    return { user, sessionToken };
+  } catch (err) {
+    console.error('login() failed', err);
+    return null;
+  }
+}
+
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+  role: User['role'],
+): Promise<{ user: User; sessionToken: string } | null> {
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role }),
+    });
+    if (!res.ok) return null;
+    const { user, sessionToken } = (await res.json()) as {
+      user: User;
+      sessionToken: string;
+    };
+    mirrorToStorage(user);
+    return { user, sessionToken };
+  } catch (err) {
+    console.error('register() failed', err);
+    return null;
+  }
+}
+
+export interface GooglePendingProfile {
+  sub: string;
+  email: string;
+  name: string;
+  picture: string | null;
+}
+
+export async function getPendingGoogleProfile(): Promise<GooglePendingProfile | null> {
+  try {
+    const res = await fetch('/api/auth/google/pending', {
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    const { profile } = (await res.json()) as { profile: GooglePendingProfile };
+    return profile;
+  } catch (err) {
+    console.error('getPendingGoogleProfile() failed', err);
+    return null;
+  }
+}
+
+export async function registerGoogle(
+  role: User['role'],
+): Promise<{ user: User; sessionToken: string } | null> {
+  try {
+    const res = await fetch('/api/auth/google/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ role }),
+    });
+    if (!res.ok) return null;
+    const { user, sessionToken } = (await res.json()) as {
+      user: User;
+      sessionToken: string;
+    };
+    mirrorToStorage(user);
+    return { user, sessionToken };
+  } catch (err) {
+    console.error('registerGoogle() failed', err);
+    return null;
+  }
+}
+
+export async function logout(): Promise<void> {
+  mirrorToStorage(null);
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (err) {
+    console.error('logout() failed', err);
+  }
+}
+
+export function getCurrentUser(): User | null {
+  if (typeof window === 'undefined') return null;
+  const userStr = localStorage.getItem(USER_STORAGE_KEY);
+  return userStr ? JSON.parse(userStr) : null;
+}
+
+export function isAuthenticated(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(TOKEN_STORAGE_KEY) === 'logged_in';
+}
+
+export async function refreshCurrentUser(): Promise<User | null> {
+  try {
+    const res = await fetch(SESSION_ENDPOINT, { credentials: 'include' });
+    if (!res.ok) {
+      mirrorToStorage(null);
+      return null;
+    }
+    const { user } = (await res.json()) as { user: User | null };
+    mirrorToStorage(user);
+    return user;
+  } catch {
+    return getCurrentUser();
+  }
+}
+
+// Profile API Functions
+export async function updateProfile(updates: {
+  name: string;
+}): Promise<User | null> {
+  try {
+    const res = await fetch('/api/users/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error || 'Unable to update profile');
+    }
+    const { user } = (await res.json()) as { user: User };
+    mirrorToStorage(user);
+    return user;
+  } catch (err) {
+    console.error('updateProfile() failed', err);
+    throw err;
+  }
+}
+
+export async function uploadAvatar(file: File): Promise<{ path: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const res = await fetch('/api/users/avatar', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error || 'Unable to upload avatar');
+    }
+
+    const { path } = (await res.json()) as { path: string };
+    return { path };
+  } catch (err) {
+    console.error('uploadAvatar() failed', err);
+    throw err;
+  }
+}
+
+export async function getAvatarUrl(path: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `/api/users/avatar-url?path=${encodeURIComponent(path)}`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) return null;
+    const { signedUrl } = (await res.json()) as { signedUrl: string };
+    return signedUrl;
+  } catch (err) {
+    console.error('getAvatarUrl() failed', err);
+    return null;
+  }
+}
+
+export async function getDisplayAvatarUrl(
+  pictureUrl: string | null | undefined,
+): Promise<string | null> {
+  if (!pictureUrl) return null;
+  if (pictureUrl.startsWith('avatars/')) {
+    return getAvatarUrl(pictureUrl);
+  }
+  return pictureUrl;
+}
+
+export async function requestPasswordChangeOtp(
+  currentPassword: string,
+): Promise<{ success: boolean; requiresOtp?: boolean; devOtp?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/users/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ currentPassword }),
+    });
+
+    const data = (await res.json()) as {
+      success?: boolean;
+      requiresOtp?: boolean;
+      devOtp?: string;
+      error?: string;
+    };
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data.error || 'Unable to send verification code',
+      };
+    }
+    if (data.requiresOtp) {
+      return {
+        success: false,
+        requiresOtp: true,
+        devOtp: data.devOtp,
+        error: data.error,
+      };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('requestPasswordChangeOtp() failed', err);
+    return { success: false, error: 'Unable to send verification code' };
+  }
+}
+
+export async function verifyPasswordChangeOtp(
+  otp: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/users/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ otp, verifyOnly: true }),
+    });
+
+    const data = (await res.json()) as {
+      success?: boolean;
+      otpVerified?: boolean;
+      error?: string;
+    };
+    if (!res.ok || !data.otpVerified) {
+      return {
+        success: false,
+        error: data.error || 'Invalid or expired verification code',
+      };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('verifyPasswordChangeOtp() failed', err);
+    return { success: false, error: 'Unable to verify code' };
+  }
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  otp: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/users/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ currentPassword, newPassword, otp }),
+    });
+
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Unable to change password' };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('changePassword() failed', err);
+    return { success: false, error: 'Unable to change password' };
+  }
+}
+
+// Student API Functions
+export async function fetchPatients(): Promise<Patient[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return generateMockPatients();
+}
+
+export async function fetchQuizzes(): Promise<Quiz[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return generateMockQuizzes();
+}
+
+export async function fetchQuizQuestions(quizId: string): Promise<Question[]> {
+  await new Promise(resolve => setTimeout(resolve, 150));
+  return generateMockQuestions(quizId);
+}
+
+export async function submitPerformance(
+  userId: string,
+  quizId: string,
+  score: number,
+  timeTaken: number,
+  answers: { question_id: string; answer: number; correct: boolean }[]
+): Promise<boolean> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+  // In a real app, this would save to a database
+  return true;
+}
+
+export async function fetchStudentPerformance(studentId: string): Promise<PerformanceLog[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return generateMockPerformanceLogs(studentId);
+}
+
+// Faculty API Types
+export interface FacultyStats {
+  total_students: number;
+  at_risk_students: number;
+  active_alerts: number;
+  completed_reviews: number;
+  active_scenarios: number;
+  pending_scenarios: number;
+}
+
+export interface FacultyStudent {
+  id: string;
+  student_id: string;
+  name: string;
+  email: string;
+  program: string;
+  year: number;
+  average_score: number;
+  quiz_count: number;
+  risk_level: 'low' | 'medium' | 'high';
+  last_activity: string;
+}
+
+export interface SimulationScenario {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  category: string;
+  patient_case: any;
+  learning_objectives: string[];
+  is_ai_generated: boolean;
+  student_count: number;
+  created_at: string;
+}
+
+export interface ScenarioAssignment {
+  id: string;
+  scenario_id: string;
+  scenario_title: string;
+  student_id: string;
+  student_name: string;
+  assigned_at: string;
+  deadline: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'overdue';
+  required: boolean;
+  score?: number;
+  completed_at?: string;
+  time_taken?: number;
+}
+
+export interface ScenarioPerformance {
+  id: string;
+  student_id: string;
+  student_name: string;
+  scenario_id: string;
+  scenario_title: string;
+  score: number;
+  max_score: number;
+  time_taken: number;
+  completed_tasks: string[];
+  total_tasks: number;
+  completed_at: string;
+}
+
+export interface ScenarioTask {
+  id: string;
+  title: string;
+  description: string;
+  category: 'assessment' | 'intervention' | 'medication' | 'communication' | 'documentation';
+  points: number;
+  is_completed: boolean;
+}
+
+export interface FacultyNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'alert' | 'warning' | 'info' | 'success';
+  is_read: boolean;
+  created_at: string;
+  student_id?: string;
+}
+
+export interface FacultyAlert {
+  id: string;
+  student_id: string;
+  student_name: string;
+  alert_type: string;
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  created_at: string;
+}
+
+export interface FacultyReport {
+  id: string;
+  student_id: string;
+  student_name: string;
+  report_type: string;
+  generated_at: string;
+  pdf_url: string | null;
+}
+
+export interface FacultyPatient {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  room_number: string;
+  diagnosis: string;
+  admission_date: string;
+  vital_signs: {
+    heart_rate: number;
+    blood_pressure: string;
+    temperature: number;
+    respiratory_rate: number;
+    oxygen_saturation: number;
+  };
+  labs: any;
+  mimic_id: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  details: string;
+  user: string;
+  timestamp: string;
+}
+
+export interface FacultyAnalytics {
+  cohort_performance: {
+    average_score: number;
+    total_quizzes: number;
+    completion_rate: number;
+    improvement_trend: string;
+  };
+  risk_distribution: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  competency_breakdown: Record<string, number>;
+  performance_trend: { week: string; average: number }[];
+  ml_insights: { type: string; message: string; priority: string }[];
+}
+
+// Mock Faculty Data
+const generateMockFacultyStudents = (): FacultyStudent[] => [
+  {
+    id: 'fs-001',
+    student_id: 'student-001',
+    name: 'Maria Cruz',
+    email: 'maria.cruz@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 82,
+    quiz_count: 12,
+    risk_level: 'low',
+    last_activity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'fs-002',
+    student_id: 'student-002',
+    name: 'Juan Reyes',
+    email: 'juan.reyes@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 65,
+    quiz_count: 8,
+    risk_level: 'high',
+    last_activity: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'fs-003',
+    student_id: 'student-003',
+    name: 'Anna Santos',
+    email: 'anna.santos@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 75,
+    quiz_count: 10,
+    risk_level: 'medium',
+    last_activity: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'fs-004',
+    student_id: 'student-004',
+    name: 'Carlos Diaz',
+    email: 'carlos.diaz@student.edu',
+    program: 'Bachelor of Science in Nursing',
+    year: 2,
+    average_score: 88,
+    quiz_count: 15,
+    risk_level: 'low',
+    last_activity: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+// Faculty API Functions
+export async function fetchFacultyDashboard(): Promise<{ stats: FacultyStats; recent_activities: AuditLog[] } | null> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  const stats: FacultyStats = {
+    total_students: 48,
+    at_risk_students: 8,
+    active_alerts: 5,
+    completed_reviews: 32,
+    active_scenarios: 12,
+    pending_scenarios: 4,
+  };
+
+  const recentActivities: AuditLog[] = [
+    {
+      id: 'audit-001',
+      action: 'Quiz Submitted',
+      details: 'Student completed Cardiac Assessment Basics',
+      user: 'Maria Cruz',
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-002',
+      action: 'Scenario Assigned',
+      details: 'Hypertension Crisis Response assigned to 5 students',
+      user: 'Dr. Juan Dela Cruz',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-003',
+      action: 'Alert Created',
+      details: 'At-risk alert for student Juan Reyes',
+      user: 'System',
+      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  return { stats, recent_activities: recentActivities };
+}
+
+export async function fetchFacultyStudents(riskLevel?: string, search?: string): Promise<FacultyStudent[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  let students = generateMockFacultyStudents();
+  
+  if (riskLevel && riskLevel !== 'all') {
+    students = students.filter(s => s.risk_level === riskLevel);
+  }
+  
+  if (search) {
+    students = students.filter(s =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+  
+  return students;
+}
+
+export async function fetchFacultyStudentDetail(studentId: string): Promise<{ student: FacultyStudent; performance_history: any[]; competencies: Record<string, number> } | null> {
+  await new Promise(resolve => setTimeout(resolve, 250));
+  
+  const students = generateMockFacultyStudents();
+  const student = students.find(s => s.student_id === studentId);
+  
+  if (!student) return null;
+
+  return {
+    student,
+    performance_history: generateMockPerformanceLogs(studentId),
+    competencies: {
+      'Cardiac Assessment': 85,
+      'Vital Signs': 90,
+      'Patient Communication': 88,
+      'Diabetes Care': 72,
+      'Emergency Response': 78,
+    },
+  };
+}
+
+export async function fetchAtRiskStudents(): Promise<FacultyStudent[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  const students = generateMockFacultyStudents();
+  return students.filter(s => s.risk_level === 'high' || s.risk_level === 'medium');
+}
+
+export async function fetchFacultyScenarios(): Promise<SimulationScenario[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'scenario-001',
+      title: 'Acute MI Response',
+      description: 'Manage a patient experiencing acute myocardial infarction',
+      difficulty: 'advanced',
+      category: 'Cardiac Emergency',
+      patient_case: { age: 68, condition: 'Acute MI', vitals: {} },
+      learning_objectives: [
+        'Recognize signs and symptoms of acute MI',
+        'Perform ECG interpretation',
+        'Administer appropriate interventions',
+      ],
+      is_ai_generated: false,
+      student_count: 12,
+      created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'scenario-002',
+      title: 'Diabetic Patient Education',
+      description: 'Educate a newly diagnosed diabetic patient',
+      difficulty: 'beginner',
+      category: 'Patient Education',
+      patient_case: { age: 45, condition: 'Type 2 Diabetes', vitals: {} },
+      learning_objectives: [
+        'Explain diabetes pathophysiology',
+        'Develop education plan',
+        'Assess patient understanding',
+      ],
+      is_ai_generated: true,
+      student_count: 8,
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+}
+
+export async function createScenario(scenario: Partial<SimulationScenario>): Promise<SimulationScenario | null> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  const newScenario: SimulationScenario = {
+    id: `scenario-${Date.now()}`,
+    title: scenario.title || 'New Scenario',
+    description: scenario.description || '',
+    difficulty: scenario.difficulty || 'intermediate',
+    category: scenario.category || 'General',
+    patient_case: scenario.patient_case || {},
+    learning_objectives: scenario.learning_objectives || [],
+    is_ai_generated: false,
+    student_count: 0,
+    created_at: new Date().toISOString(),
+  };
+  
+  return newScenario;
+}
+
+export async function generateAIScenario(prompt: string): Promise<SimulationScenario | null> {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  return {
+    id: `scenario-ai-${Date.now()}`,
+    title: 'AI Generated Scenario',
+    description: prompt,
+    difficulty: 'intermediate',
+    category: 'AI Generated',
+    patient_case: { generated_by_ai: true },
+    learning_objectives: ['Complete the scenario', 'Demonstrate clinical skills'],
+    is_ai_generated: true,
+    student_count: 0,
+    created_at: new Date().toISOString(),
+  };
+}
+
+export async function fetchFacultyPatients(): Promise<FacultyPatient[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'fpatient-001',
+      name: 'Juan Reyes',
+      age: 68,
+      gender: 'M',
+      room_number: 'Room 101',
+      diagnosis: 'Acute Myocardial Infarction',
+      admission_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      vital_signs: {
+        heart_rate: 98,
+        blood_pressure: '140/90',
+        temperature: 37.2,
+        respiratory_rate: 20,
+        oxygen_saturation: 96,
+      },
+      labs: { troponin: '2.5 ng/mL', creatinine: '1.1 mg/dL' },
+      mimic_id: 'mimic-001',
+    },
+    {
+      id: 'fpatient-002',
+      name: 'Maria Santos',
+      age: 45,
+      gender: 'F',
+      room_number: 'Room 102',
+      diagnosis: 'Type 2 Diabetes',
+      admission_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      vital_signs: {
+        heart_rate: 72,
+        blood_pressure: '120/80',
+        temperature: 37.0,
+        respiratory_rate: 16,
+        oxygen_saturation: 98,
+      },
+      labs: { glucose: '240 mg/dL', HbA1c: '8.2%' },
+      mimic_id: 'mimic-002',
+    },
+  ];
+}
+
+export async function fetchFacultyPatientDetail(patientId: string): Promise<{ patient: FacultyPatient; clinical_decision_support: any } | null> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const patients = await fetchFacultyPatients();
+  const patient = patients.find(p => p.id === patientId);
+  
+  if (!patient) return null;
+
+  return {
+    patient,
+    clinical_decision_support: {
+      recommendations: ['Monitor cardiac enzymes', 'Continue ECG monitoring', 'Administer antiplatelet therapy'],
+      warnings: ['High heart rate - potential arrhythmia', 'Elevated blood pressure'],
+    },
+  };
+}
+
+export async function fetchFacultyReports(): Promise<FacultyReport[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'report-001',
+      student_id: 'student-001',
+      student_name: 'Maria Cruz',
+      report_type: 'competency',
+      generated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      pdf_url: null,
+    },
+    {
+      id: 'report-002',
+      student_id: 'student-002',
+      student_name: 'Juan Reyes',
+      report_type: 'performance',
+      generated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      pdf_url: null,
+    },
+  ];
+}
+
+export async function generateFacultyReport(studentId: string, reportType: string = 'competency'): Promise<FacultyReport | null> {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  return {
+    id: `report-${Date.now()}`,
+    student_id: studentId,
+    student_name: 'Student Name',
+    report_type: reportType,
+    generated_at: new Date().toISOString(),
+    pdf_url: null,
+  };
+}
+
+export async function fetchFacultyNotifications(): Promise<{ notifications: FacultyNotification[]; total: number; unread: number } | null> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const notifications: FacultyNotification[] = [
+    {
+      id: 'notif-001',
+      title: 'Student Quiz Submission',
+      message: 'Maria Cruz completed Cardiac Assessment Basics quiz',
+      type: 'info',
+      is_read: false,
+      created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      student_id: 'student-001',
+    },
+    {
+      id: 'notif-002',
+      title: 'At-Risk Alert',
+      message: 'Juan Reyes performance is declining',
+      type: 'warning',
+      is_read: false,
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      student_id: 'student-002',
+    },
+    {
+      id: 'notif-003',
+      title: 'Scenario Completion',
+      message: 'Anna Santos completed Diabetic Patient Education scenario',
+      type: 'success',
+      is_read: true,
+      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      student_id: 'student-003',
+    },
+  ];
+
+  return {
+    notifications,
+    total: notifications.length,
+    unread: notifications.filter(n => !n.is_read).length,
+  };
+}
+
+export async function markNotificationRead(notificationId: string): Promise<boolean> {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return true;
+}
+
+export async function fetchFacultyAlerts(status?: string): Promise<{ alerts: FacultyAlert[]; total: number; pending: number } | null> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const alerts: FacultyAlert[] = [
+    {
+      id: 'alert-001',
+      student_id: 'student-002',
+      student_name: 'Juan Reyes',
+      alert_type: 'Low Performance',
+      severity: 'high',
+      description: 'Average score below 70%, requires intervention',
+      status: 'pending',
+      created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'alert-002',
+      student_id: 'student-003',
+      student_name: 'Anna Santos',
+      alert_type: 'Low Engagement',
+      severity: 'medium',
+      description: 'No activity in past 48 hours',
+      status: 'pending',
+      created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  let filtered = alerts;
+  if (status && status !== 'all') {
+    filtered = alerts.filter(a => a.status === status);
+  }
+
+  return {
+    alerts: filtered,
+    total: alerts.length,
+    pending: alerts.filter(a => a.status === 'pending').length,
+  };
+}
+
+export async function updateAlertStatus(alertId: string, status: string): Promise<boolean> {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return true;
+}
+
+export async function createAlert(alert: Partial<FacultyAlert>): Promise<FacultyAlert | null> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return {
+    id: `alert-${Date.now()}`,
+    student_id: alert.student_id || '',
+    student_name: alert.student_name || '',
+    alert_type: alert.alert_type || 'Manual Alert',
+    severity: alert.severity || 'medium',
+    description: alert.description || '',
+    status: 'pending',
+    created_at: new Date().toISOString(),
+  };
+}
+
+export async function fetchAuditTrail(action?: string): Promise<AuditLog[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const auditLogs: AuditLog[] = [
+    {
+      id: 'audit-001',
+      action: 'Login',
+      details: 'User logged in successfully',
+      user: 'Dr. Juan Dela Cruz',
+      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-002',
+      action: 'Quiz Submitted',
+      details: 'Submitted Cardiac Assessment Basics',
+      user: 'Maria Cruz',
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'audit-003',
+      action: 'Report Generated',
+      details: 'Generated competency report for Juan Reyes',
+      user: 'Dr. Juan Dela Cruz',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  let filtered = auditLogs;
+  if (action && action !== 'all') {
+    filtered = auditLogs.filter(a => a.action === action);
+  }
+
+  return filtered;
+}
+
+export async function fetchFacultyAnalytics(): Promise<FacultyAnalytics | null> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return {
+    cohort_performance: {
+      average_score: 82,
+      total_quizzes: 240,
+      completion_rate: 85,
+      improvement_trend: 'up',
+    },
+    risk_distribution: {
+      low: 35,
+      medium: 8,
+      high: 5,
+    },
+    competency_breakdown: {
+      'Cardiac Assessment': 82,
+      'Vital Signs': 85,
+      'Patient Communication': 80,
+      'Diabetes Care': 72,
+      'Emergency Response': 78,
+    },
+    performance_trend: [
+      { week: 'Week 1', average: 78 },
+      { week: 'Week 2', average: 80 },
+      { week: 'Week 3', average: 82 },
+      { week: 'Week 4', average: 85 },
+    ],
+    ml_insights: [
+      { type: 'risk', message: 'Juan Reyes shows declining performance', priority: 'high' },
+      { type: 'opportunity', message: 'Carlos Diaz ready for advanced scenarios', priority: 'medium' },
+    ],
+  };
+}
+
+export async function predictStudentRisk(studentId: string): Promise<any | null> {
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  return {
+    student_id: studentId,
+    risk_score: 0.65,
+    risk_level: 'medium',
+    factors: ['Lower average scores', 'Decreased engagement', 'Inconsistent performance'],
+    recommendations: ['Schedule tutoring session', 'Offer peer mentoring', 'Provide additional resources'],
+  };
+}
+
+export async function getClinicalDecisionSupport(patientCase: any): Promise<any | null> {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  return {
+    diagnosis_support: ['Acute Myocardial Infarction', 'Unstable Angina'],
+    treatment_recommendations: ['Administer aspirin', 'Start heparin drip', 'Prepare for cardiac catheterization'],
+    monitoring_parameters: ['Cardiac enzymes', 'ECG every 15 minutes', 'Vital signs every 5 minutes'],
+    educational_resources: ['MI Management Guidelines', 'Acute Cardiac Care Protocol'],
+  };
+}
+
+export async function fetchScenarioAssignments(scenarioId?: string): Promise<ScenarioAssignment[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const assignments: ScenarioAssignment[] = [
+    {
+      id: 'assign-001',
+      scenario_id: 'scenario-001',
+      scenario_title: 'Acute MI Response',
+      student_id: 'student-001',
+      student_name: 'Maria Cruz',
+      assigned_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      required: true,
+      score: 85,
+      completed_at: undefined,
+      time_taken: 2400,
+    },
+    {
+      id: 'assign-002',
+      scenario_id: 'scenario-002',
+      scenario_title: 'Diabetic Patient Education',
+      student_id: 'student-002',
+      student_name: 'Juan Reyes',
+      assigned_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'pending',
+      required: true,
+      score: undefined,
+      completed_at: undefined,
+      time_taken: undefined,
+    },
+  ];
+
+  let filtered = assignments;
+  if (scenarioId) {
+    filtered = assignments.filter(a => a.scenario_id === scenarioId);
+  }
+
+  return filtered;
+}
+
+export async function assignScenarioToStudents(
+  scenarioId: string,
+  studentIds: string[],
+  deadline: string,
+  required: boolean
+): Promise<ScenarioAssignment[]> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return studentIds.map((studentId, index) => ({
+    id: `assign-${Date.now()}-${index}`,
+    scenario_id: scenarioId,
+    scenario_title: 'Assigned Scenario',
+    student_id: studentId,
+    student_name: 'Student',
+    assigned_at: new Date().toISOString(),
+    deadline,
+    status: 'pending' as const,
+    required,
+  }));
+}
+
+export async function fetchStudentScenarioAssignments(studentId: string): Promise<ScenarioAssignment[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'assign-001',
+      scenario_id: 'scenario-001',
+      scenario_title: 'Acute MI Response',
+      student_id: studentId,
+      student_name: 'Maria Cruz',
+      assigned_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      required: true,
+      score: 85,
+    },
+  ];
+}
+
+export async function submitScenarioPerformance(
+  scenarioId: string,
+  completedTasks: string[],
+  timeTaken: number
+): Promise<ScenarioPerformance | null> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return {
+    id: `perf-${Date.now()}`,
+    student_id: 'student-001',
+    student_name: 'Maria Cruz',
+    scenario_id: scenarioId,
+    scenario_title: 'Scenario Title',
+    score: 85,
+    max_score: 100,
+    time_taken: timeTaken,
+    completed_tasks: completedTasks,
+    total_tasks: 8,
+    completed_at: new Date().toISOString(),
+  };
+}
+
+export async function fetchStudentScenarioHistory(studentId: string): Promise<ScenarioPerformance[]> {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  return [
+    {
+      id: 'perf-001',
+      student_id: studentId,
+      student_name: 'Maria Cruz',
+      scenario_id: 'scenario-001',
+      scenario_title: 'Acute MI Response',
+      score: 85,
+      max_score: 100,
+      time_taken: 2400,
+      completed_tasks: ['Assessment', 'Intervention', 'Documentation'],
+      total_tasks: 8,
+      completed_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+}
