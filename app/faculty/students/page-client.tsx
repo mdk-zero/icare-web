@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { fetchFacultyStudents, createFacultyStudent, fetchAllStudentUsers, updateStudentUser, deleteStudentUser, FacultyStudent, StudentUser } from "../../lib/api";
 
@@ -37,6 +37,7 @@ export default function FacultyStudentsClient() {
   const [middleInitial, setMiddleInitial] = useState("");
   const [lastName, setLastName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const newEmailRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
   const [createdPassword, setCreatedPassword] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export default function FacultyStudentsClient() {
   const [updatingStudent, setUpdatingStudent] = useState<StudentUser | null>(null);
   const [updateName, setUpdateName] = useState("");
   const [updateEmail, setUpdateEmail] = useState("");
+  const updateEmailRef = useRef<HTMLInputElement>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -59,7 +61,7 @@ export default function FacultyStudentsClient() {
     const firstNameTrimmed = firstName.trim();
     const middleInitialTrimmed = middleInitial.trim();
     const lastNameTrimmed = lastName.trim();
-    const emailTrimmed = newEmail.trim();
+    const emailTrimmed = (newEmailRef.current?.value ?? newEmail).trim();
 
     if (!firstNameTrimmed) {
       setMessage({ type: "error", text: "First name is required" });
@@ -112,6 +114,7 @@ export default function FacultyStudentsClient() {
       setMiddleInitial("");
       setLastName("");
       setNewEmail("");
+      if (newEmailRef.current) newEmailRef.current.value = "";
       loadStudents();
       loadStudentUsers();
     } catch {
@@ -126,7 +129,7 @@ export default function FacultyStudentsClient() {
     if (!updatingStudent) return;
 
     const nameTrimmed = updateName.trim();
-    const emailTrimmed = updateEmail.trim();
+    const emailTrimmed = (updateEmailRef.current?.value ?? updateEmail).trim();
 
     if (!nameTrimmed) {
       setMessage({ type: "error", text: "Student name is required" });
@@ -187,6 +190,7 @@ export default function FacultyStudentsClient() {
     setUpdatingStudent(student);
     setUpdateName(student.name);
     setUpdateEmail(student.email);
+    if (updateEmailRef.current) updateEmailRef.current.value = student.email;
     setShowUpdateModal(true);
     setMessage(null);
   };
@@ -275,7 +279,7 @@ export default function FacultyStudentsClient() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => { setShowCreateModal(true); setMessage(null); setCreatedPassword(null); setCopiedPassword(false); }}
+            onClick={() => { setShowCreateModal(true); setMessage(null); setCreatedPassword(null); setCopiedPassword(false); if (newEmailRef.current) newEmailRef.current.value = ""; }}
             className="px-4 py-2.5 bg-[#1B6B7B] text-white font-medium rounded-xl hover:bg-[#145A63] transition-all flex items-center gap-2 shadow-sm"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -386,6 +390,7 @@ export default function FacultyStudentsClient() {
                   setMiddleInitial("");
                   setLastName("");
                   setNewEmail("");
+                  if (newEmailRef.current) newEmailRef.current.value = "";
                   setMessage(null);
                   setCreatedPassword(null);
                   setCopiedPassword(false);
@@ -468,11 +473,11 @@ export default function FacultyStudentsClient() {
                   </div>
                   <input
                     id="new-student-email"
-                    name="new-student-email"
                     type="text"
                     inputMode="email"
                     autoComplete="off"
-                    value={newEmail}
+                    ref={newEmailRef}
+                    defaultValue={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="@batstate-u.edu.ph"
                     className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
@@ -712,11 +717,11 @@ export default function FacultyStudentsClient() {
                   </div>
                   <input
                     id="update-student-email"
-                    name="update-student-email"
                     type="text"
                     inputMode="email"
                     autoComplete="off"
-                    value={updateEmail}
+                    ref={updateEmailRef}
+                    defaultValue={updateEmail}
                     onChange={(e) => setUpdateEmail(e.target.value)}
                     placeholder="student@example.edu"
                     className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
