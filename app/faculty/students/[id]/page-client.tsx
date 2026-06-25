@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { fetchFacultyStudentDetail, predictStudentRisk, FacultyStudent, fetchStudentScenarioHistory } from "../../../lib/api";
+import { fetchFacultyStudentDetail, predictStudentRisk, logAuditAction, getCurrentFacultyUser, FacultyStudent, fetchStudentScenarioHistory } from "../../../lib/api";
 
 interface PerformanceHistory {
   quiz_title: string;
@@ -34,6 +34,24 @@ export default function StudentDetailClient() {
   const [riskPrediction, setRiskPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("performance");
+  const loggedRef = useRef(false);
+
+  useEffect(() => {
+    if (!studentId || loggedRef.current) return;
+    loggedRef.current = true;
+    const faculty = getCurrentFacultyUser();
+    if (faculty) {
+      logAuditAction({
+        faculty_id: faculty.id,
+        faculty_name: faculty.name,
+        tab: 'student_detail',
+        action: 'view_student',
+        details: `Viewed student detail page`,
+        target_type: 'student',
+        target_id: studentId,
+      });
+    }
+  }, [studentId]);
 
   useEffect(() => {
     if (studentId) {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { fetchFacultyReports, fetchFacultyStudents, generateFacultyReport, FacultyReport, FacultyStudent } from "../../lib/api";
+import { useState, useEffect, useRef } from "react";
+import { fetchFacultyReports, fetchFacultyStudents, generateFacultyReport, logAuditAction, getCurrentFacultyUser, FacultyReport, FacultyStudent } from "../../lib/api";
 
 export default function FacultyReportsClient() {
   const [reports, setReports] = useState<FacultyReport[]>([]);
@@ -11,6 +11,22 @@ export default function FacultyReportsClient() {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [reportType, setReportType] = useState("competency");
   const [generating, setGenerating] = useState(false);
+  const loggedRef = useRef(false);
+
+  useEffect(() => {
+    if (loggedRef.current) return;
+    loggedRef.current = true;
+    const faculty = getCurrentFacultyUser();
+    if (faculty) {
+      logAuditAction({
+        faculty_id: faculty.id,
+        faculty_name: faculty.name,
+        tab: 'reports',
+        action: 'page_view',
+        details: 'Navigated to Reports tab',
+      });
+    }
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -33,6 +49,19 @@ export default function FacultyReportsClient() {
     const newReport = await generateFacultyReport(selectedStudent, reportType);
     if (newReport) {
       setReports([...reports, newReport]);
+      const faculty = getCurrentFacultyUser();
+      if (faculty) {
+        logAuditAction({
+          faculty_id: faculty.id,
+          faculty_name: faculty.name,
+          tab: 'reports',
+          action: 'generate_report',
+          details: `Generated ${reportType} report for ${newReport.student_name}`,
+          target_type: 'report',
+          target_id: newReport.id,
+          metadata: { student_name: newReport.student_name, report_type: reportType },
+        });
+      }
     }
     setGenerating(false);
     setShowModal(false);

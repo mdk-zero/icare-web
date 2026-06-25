@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { 
   fetchFacultyDashboard, 
   fetchFacultyAlerts, 
   fetchFacultyNotifications,
   fetchFacultyStudents,
+  logAuditAction,
+  getCurrentFacultyUser,
   FacultyStats, 
   FacultyAlert,
   FacultyNotification,
@@ -21,6 +23,22 @@ export default function FacultyDashboard() {
   const [alerts, setAlerts] = useState<FacultyAlert[]>([]);
   const [activities, setActivities] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const loggedRef = useRef(false);
+
+  useEffect(() => {
+    if (loggedRef.current) return;
+    loggedRef.current = true;
+    const faculty = getCurrentFacultyUser();
+    if (faculty) {
+      logAuditAction({
+        faculty_id: faculty.id,
+        faculty_name: faculty.name,
+        tab: 'overview',
+        action: 'page_view',
+        details: 'Navigated to Overview tab',
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -223,7 +241,7 @@ export default function FacultyDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm">{activity.action}</p>
                   <p className="text-xs text-gray-500 truncate">{activity.details}</p>
-                  <p className="text-xs text-gray-400 mt-1">{activity.timestamp}</p>
+                  <p className="text-xs text-gray-400 mt-1">{activity.created_at}</p>
                 </div>
               </div>
             ))}
