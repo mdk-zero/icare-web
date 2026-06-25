@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import Image from "next/image";
 import { GoogleOAuthProvider, GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import { login, isAuthenticated, getCurrentUser, User } from "../lib/api";
+import { login, isAuthenticated, getCurrentUser, User, logAuditAction } from "../lib/api";
 import logo from "../../public/logo-no-bg.png";
 import logo_white from "../../public/logo-white-no-bg.png";
 
@@ -75,6 +75,16 @@ export default function LoginPage() {
       const result = await login(email, password);
 
       if (result) {
+        if (result.user.role === "faculty") {
+          void logAuditAction({
+            faculty_id: result.user.id,
+            faculty_name: result.user.name,
+            tab: "Authentication",
+            action: "Login",
+            details: `Logged in via email and password`,
+            metadata: { method: "credentials" },
+          });
+        }
         redirectAfterAuth(result.user);
       } else {
         setError("Invalid email or password");
@@ -118,6 +128,16 @@ export default function LoginPage() {
       const user = data.user as User;
       localStorage.setItem("icare_user", JSON.stringify(user));
       localStorage.setItem("icare_token", "logged_in");
+      if (user.role === "faculty") {
+        void logAuditAction({
+          faculty_id: user.id,
+          faculty_name: user.name,
+          tab: "Authentication",
+          action: "Login",
+          details: `Logged in via Google`,
+          metadata: { method: "google" },
+        });
+      }
       redirectAfterAuth(user);
     } catch {
       setError("Google sign-in failed. Please try again.");

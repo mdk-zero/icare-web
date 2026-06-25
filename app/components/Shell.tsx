@@ -18,6 +18,7 @@ import {
   getDisplayAvatarUrl,
   logout,
   refreshCurrentUser,
+  logAuditAction,
   User,
 } from "../lib/api";
 
@@ -121,6 +122,15 @@ export default function Shell({
   }, []);
 
   const handleLogout = () => {
+    if (user?.role === "faculty") {
+      void logAuditAction({
+        faculty_id: user.id,
+        faculty_name: user.name,
+        tab: "Authentication",
+        action: "Logout",
+        details: "Logged out",
+      });
+    }
     logout();
     router.replace("/login");
   };
