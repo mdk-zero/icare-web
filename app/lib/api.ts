@@ -729,10 +729,26 @@ export interface FacultyPatient {
 
 export interface AuditLog {
   id: string;
+  faculty_id: string;
+  faculty_name: string;
+  tab: string;
   action: string;
   details: string;
-  user: string;
-  timestamp: string;
+  target_type?: string | null;
+  target_id?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface AuditLogInsert {
+  faculty_id: string;
+  faculty_name: string;
+  tab: string;
+  action: string;
+  details: string;
+  target_type?: string | null;
+  target_id?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface FacultyAnalytics {
@@ -820,24 +836,30 @@ export async function fetchFacultyDashboard(): Promise<{ stats: FacultyStats; re
   const recentActivities: AuditLog[] = [
     {
       id: 'audit-001',
+      faculty_id: '',
+      faculty_name: 'Maria Cruz',
+      tab: 'overview',
       action: 'Quiz Submitted',
       details: 'Student completed Cardiac Assessment Basics',
-      user: 'Maria Cruz',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     },
     {
       id: 'audit-002',
+      faculty_id: '',
+      faculty_name: 'Dr. Juan Dela Cruz',
+      tab: 'scenarios',
       action: 'Scenario Assigned',
       details: 'Hypertension Crisis Response assigned to 5 students',
-      user: 'Dr. Juan Dela Cruz',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     },
     {
       id: 'audit-003',
+      faculty_id: '',
+      faculty_name: 'System',
+      tab: 'overview',
       action: 'Alert Created',
       details: 'At-risk alert for student Juan Reyes',
-      user: 'System',
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     },
   ];
 
@@ -1209,38 +1231,49 @@ export async function createAlert(alert: Partial<FacultyAlert>): Promise<Faculty
 }
 
 export async function fetchAuditTrail(action?: string): Promise<AuditLog[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  const auditLogs: AuditLog[] = [
-    {
-      id: 'audit-001',
-      action: 'Login',
-      details: 'User logged in successfully',
-      user: 'Dr. Juan Dela Cruz',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'audit-002',
-      action: 'Quiz Submitted',
-      details: 'Submitted Cardiac Assessment Basics',
-      user: 'Maria Cruz',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'audit-003',
-      action: 'Report Generated',
-      details: 'Generated competency report for Juan Reyes',
-      user: 'Dr. Juan Dela Cruz',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
+  const params = new URLSearchParams();
+  if (action) params.set('action', action);
+  const res = await fetch(`/api/faculty/audit?${params.toString()}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.logs ?? [];
+}
 
-  let filtered = auditLogs;
-  if (action && action !== 'all') {
-    filtered = auditLogs.filter(a => a.action === action);
+export async function logAuditAction(payload: AuditLogInsert): Promise<void> {
+  try {
+    await fetch('/api/faculty/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // silently fail — audit should never break the app
   }
+}
 
-  return filtered;
+export async function clearAuditTrail(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/faculty/audit', { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json();
+      return { success: false, error: data.error ?? 'Failed to clear audit trail' };
+    }
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Network error' };
+  }
+}
+
+export function getCurrentFacultyUser(): { id: string; name: string } | null {
+  if (typeof window === 'undefined') return null;
+  const userStr = localStorage.getItem('icare_user');
+  if (!userStr) return null;
+  try {
+    const user = JSON.parse(userStr);
+    return { id: user.id, name: user.name };
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchFacultyAnalytics(): Promise<FacultyAnalytics | null> {

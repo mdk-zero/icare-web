@@ -14,11 +14,13 @@ import {
 interface ChangePasswordFormProps {
   backHref: string;
   backLabel?: string;
+  onPasswordChanged?: () => void;
 }
 
 export default function ChangePasswordForm({
   backHref,
   backLabel = "Back to profile",
+  onPasswordChanged,
 }: ChangePasswordFormProps) {
   const [user, setUser] = useState<User | null>(getCurrentUser());
   const [step, setStep] = useState<"request" | "otp" | "reset">("request");
@@ -199,6 +201,7 @@ export default function ChangePasswordForm({
         setDevOtp(null);
         const fresh = await refreshCurrentUser();
         if (fresh) setUser(fresh);
+        onPasswordChanged?.();
         setMessage({
           type: "success",
           text: hasPassword

@@ -223,7 +223,7 @@ export default function FacultyDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm">{activity.action}</p>
                   <p className="text-xs text-gray-500 truncate">{activity.details}</p>
-                  <p className="text-xs text-gray-400 mt-1">{activity.timestamp}</p>
+                  <p className="text-xs text-gray-400 mt-1">{activity.created_at}</p>
                 </div>
               </div>
             ))}

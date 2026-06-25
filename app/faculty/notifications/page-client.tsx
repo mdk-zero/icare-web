@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchFacultyNotifications, markNotificationRead, FacultyNotification } from "../../lib/api";
+import { fetchFacultyNotifications, markNotificationRead, logAuditAction, getCurrentFacultyUser, FacultyNotification } from "../../lib/api";
 
 export default function FacultyNotificationsClient() {
   const [notifications, setNotifications] = useState<FacultyNotification[]>([]);
@@ -28,6 +28,18 @@ export default function FacultyNotificationsClient() {
       n.id === id ? { ...n, is_read: true } : n
     ));
     setUnreadCount(Math.max(0, unreadCount - 1));
+    const faculty = getCurrentFacultyUser();
+    if (faculty) {
+      logAuditAction({
+        faculty_id: faculty.id,
+        faculty_name: faculty.name,
+        tab: 'notifications',
+        action: 'mark_read',
+        details: 'Marked a notification as read',
+        target_type: 'notification',
+        target_id: id,
+      });
+    }
   };
 
   const handleMarkAllAsRead = async () => {
@@ -36,6 +48,16 @@ export default function FacultyNotificationsClient() {
     }
     setNotifications(notifications.map(n => ({ ...n, is_read: true })));
     setUnreadCount(0);
+    const faculty = getCurrentFacultyUser();
+    if (faculty) {
+      logAuditAction({
+        faculty_id: faculty.id,
+        faculty_name: faculty.name,
+        tab: 'notifications',
+        action: 'mark_all_read',
+        details: 'Marked all notifications as read',
+      });
+    }
   };
 
   const getNotificationIcon = (type: string) => {

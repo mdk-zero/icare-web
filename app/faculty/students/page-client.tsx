@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -20,6 +20,8 @@ import {
   fetchAllStudentUsers,
   updateStudentUser,
   deleteStudentUser,
+  logAuditAction,
+  getCurrentFacultyUser,
   FacultyStudent,
   StudentUser,
 } from "../../lib/api";
@@ -145,6 +147,19 @@ export default function FacultyStudentsClient() {
       if (newEmailRef.current) newEmailRef.current.value = "";
       loadStudents();
       loadStudentUsers();
+      const faculty = getCurrentFacultyUser();
+      if (faculty) {
+        logAuditAction({
+          faculty_id: faculty.id,
+          faculty_name: faculty.name,
+          tab: 'students',
+          action: 'register_student',
+          details: `Registered new student ${fullName}`,
+          target_type: 'student',
+          target_id: data?.student?.id ?? '',
+          metadata: { student_name: fullName, email: emailTrimmed },
+        });
+      }
     } catch {
       setMessage({ type: "error", text: "An unexpected error occurred" });
     } finally {
@@ -187,6 +202,19 @@ export default function FacultyStudentsClient() {
       setShowUpdateModal(false);
       setUpdatingStudent(null);
       loadStudentUsers();
+      const faculty = getCurrentFacultyUser();
+      if (faculty) {
+        logAuditAction({
+          faculty_id: faculty.id,
+          faculty_name: faculty.name,
+          tab: 'students',
+          action: 'update_student',
+          details: `Updated student ${data!.name}`,
+          target_type: 'student',
+          target_id: updatingStudent.id,
+          metadata: { student_name: data!.name, email: emailTrimmed },
+        });
+      }
     } catch {
       setMessage({ type: "error", text: "An unexpected error occurred" });
     } finally {
@@ -214,6 +242,19 @@ export default function FacultyStudentsClient() {
       setShowDeleteModal(false);
       setDeletingStudent(null);
       loadStudentUsers();
+      const faculty = getCurrentFacultyUser();
+      if (faculty) {
+        logAuditAction({
+          faculty_id: faculty.id,
+          faculty_name: faculty.name,
+          tab: 'students',
+          action: 'delete_student',
+          details: `Deleted student ${deletingStudent.name}`,
+          target_type: 'student',
+          target_id: deletingStudent.id,
+          metadata: { student_name: deletingStudent.name },
+        });
+      }
     } catch {
       setMessage({ type: "error", text: "An unexpected error occurred" });
     } finally {

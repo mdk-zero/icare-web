@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchFacultyScenarios, createScenario, generateAIScenario, SimulationScenario, fetchFacultyStudents, FacultyStudent, assignScenarioToStudents } from "../../lib/api";
+import { fetchFacultyScenarios, createScenario, generateAIScenario, SimulationScenario, fetchFacultyStudents, FacultyStudent, assignScenarioToStudents, logAuditAction, getCurrentFacultyUser } from "../../lib/api";
 
 export default function FacultyScenariosClient() {
   const [scenarios, setScenarios] = useState<SimulationScenario[]>([]);
@@ -41,6 +41,19 @@ export default function FacultyScenariosClient() {
     const newScenario = await generateAIScenario(aiPrompt);
     if (newScenario) {
       setScenarios([...scenarios, newScenario]);
+      const faculty = getCurrentFacultyUser();
+      if (faculty) {
+        logAuditAction({
+          faculty_id: faculty.id,
+          faculty_name: faculty.name,
+          tab: 'scenarios',
+          action: 'ai_generate_scenario',
+          details: `AI generated scenario: ${newScenario.title}`,
+          target_type: 'scenario',
+          target_id: newScenario.id,
+          metadata: { scenario_title: newScenario.title },
+        });
+      }
     }
     setGenerating(false);
     setShowAIModal(false);
@@ -88,6 +101,19 @@ export default function FacultyScenariosClient() {
     );
     
     alert(`Scenario "${selectedScenario.title}" assigned to ${selectedStudents.length} student(s)`);
+    const faculty = getCurrentFacultyUser();
+    if (faculty) {
+      logAuditAction({
+        faculty_id: faculty.id,
+        faculty_name: faculty.name,
+        tab: 'scenarios',
+        action: 'assign_scenario',
+        details: `Assigned scenario "${selectedScenario.title}" to ${selectedStudents.length} student(s)`,
+        target_type: 'scenario',
+        target_id: selectedScenario.id,
+        metadata: { scenario_title: selectedScenario.title, student_count: selectedStudents.length, required: assignRequired },
+      });
+    }
     setShowAssignModal(false);
     setSelectedScenario(null);
     setSelectedStudents([]);
