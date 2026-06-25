@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { fetchFacultyScenarios, createScenario, generateAIScenario, SimulationScenario, fetchFacultyStudents, FacultyStudent, assignScenarioToStudents, logAuditAction, getCurrentFacultyUser } from "../../lib/api";
 
 export default function FacultyScenariosClient() {
@@ -17,22 +17,6 @@ export default function FacultyScenariosClient() {
   const [assignDeadline, setAssignDeadline] = useState("");
   const [assignRequired, setAssignRequired] = useState(false);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'scenarios',
-        action: 'page_view',
-        details: 'Navigated to Scenarios tab',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     loadScenarios();

@@ -1,28 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { fetchFacultyPatients, logAuditAction, getCurrentFacultyUser, FacultyPatient } from "../../lib/api";
+import { useState, useEffect } from "react";
+import { fetchFacultyPatients, FacultyPatient } from "../../lib/api";
 
 export default function FacultyPatientsClient() {
   const [patients, setPatients] = useState<FacultyPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPatient, setSelectedPatient] = useState<FacultyPatient | null>(null);
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'patients',
-        action: 'page_view',
-        details: 'Navigated to Patients tab',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     loadPatients();

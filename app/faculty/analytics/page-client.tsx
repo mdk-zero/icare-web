@@ -1,27 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { fetchFacultyAnalytics, logAuditAction, getCurrentFacultyUser, FacultyAnalytics } from "../../lib/api";
+import { useState, useEffect } from "react";
+import { fetchFacultyAnalytics, FacultyAnalytics } from "../../lib/api";
 
 export default function FacultyAnalyticsClient() {
   const [analytics, setAnalytics] = useState<FacultyAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'analytics',
-        action: 'page_view',
-        details: 'Navigated to Analytics tab',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     loadAnalytics();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -34,22 +34,6 @@ export default function FacultyStudentsClient() {
   const [riskFilter, setRiskFilter] = useState("all");
   const [studentUsers, setStudentUsers] = useState<StudentUser[]>([]);
   const [loadingStudentUsers, setLoadingStudentUsers] = useState(true);
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'students',
-        action: 'page_view',
-        details: 'Navigated to My Students tab',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     loadStudents();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { fetchFacultyReports, fetchFacultyStudents, generateFacultyReport, logAuditAction, getCurrentFacultyUser, FacultyReport, FacultyStudent } from "../../lib/api";
 
 export default function FacultyReportsClient() {
@@ -11,22 +11,6 @@ export default function FacultyReportsClient() {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [reportType, setReportType] = useState("competency");
   const [generating, setGenerating] = useState(false);
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'reports',
-        action: 'page_view',
-        details: 'Navigated to Reports tab',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     loadData();

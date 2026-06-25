@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   fetchFacultyDashboard, 
   fetchFacultyAlerts, 
   fetchFacultyNotifications,
   fetchFacultyStudents,
-  logAuditAction,
-  getCurrentFacultyUser,
   FacultyStats, 
   FacultyAlert,
   FacultyNotification,
@@ -23,22 +21,6 @@ export default function FacultyDashboard() {
   const [alerts, setAlerts] = useState<FacultyAlert[]>([]);
   const [activities, setActivities] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'overview',
-        action: 'page_view',
-        details: 'Navigated to Overview tab',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     const loadDashboardData = async () => {

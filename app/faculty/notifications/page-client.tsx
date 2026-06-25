@@ -1,28 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { fetchFacultyNotifications, markNotificationRead, logAuditAction, getCurrentFacultyUser, FacultyNotification } from "../../lib/api";
 
 export default function FacultyNotificationsClient() {
   const [notifications, setNotifications] = useState<FacultyNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'notifications',
-        action: 'page_view',
-        details: 'Navigated to Notifications tab',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     loadNotifications();

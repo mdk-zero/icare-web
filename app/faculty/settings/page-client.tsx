@@ -1,27 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import ProfileEditor from "../../components/ProfileEditor";
 import { logAuditAction, getCurrentFacultyUser } from "../../lib/api";
 
 export default function FacultySettingsClient() {
-  const loggedRef = useRef(false);
-
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: 'settings',
-        action: 'page_view',
-        details: 'Navigated to Settings tab',
-      });
-    }
-  }, []);
-
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-8">
