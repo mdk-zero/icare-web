@@ -12,6 +12,8 @@ import {
   faClipboardCheck,
   faCircleInfo,
   faSpinner,
+  faRightToBracket,
+  faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 import { fetchAuditTrail, clearAuditTrail, AuditLog } from "../../lib/api";
 
@@ -66,6 +68,7 @@ export default function FacultyAuditClient() {
     if (t === 'analytics') return 'bg-indigo-50 text-indigo-700';
     if (t === 'patients') return 'bg-rose-50 text-rose-700';
     if (t === 'audit') return 'bg-cyan-50 text-cyan-700';
+    if (t === 'authentication') return 'bg-orange-50 text-orange-700';
     return 'bg-gray-50 text-gray-700';
   };
 
@@ -75,6 +78,8 @@ export default function FacultyAuditClient() {
     if (lowerAction.includes('scenario')) return 'bg-purple-50 text-purple-700';
     if (lowerAction.includes('report')) return 'bg-blue-50 text-blue-700';
     if (lowerAction.includes('review')) return 'bg-emerald-50 text-emerald-700';
+    if (lowerAction === 'login') return 'bg-green-50 text-green-700';
+    if (lowerAction === 'logout') return 'bg-gray-100 text-gray-700';
     return 'bg-gray-50 text-gray-700';
   };
 
@@ -84,6 +89,8 @@ export default function FacultyAuditClient() {
     if (lowerAction.includes('scenario')) return faFlask;
     if (lowerAction.includes('report')) return faFileLines;
     if (lowerAction.includes('reviewed')) return faClipboardCheck;
+    if (lowerAction === 'login') return faRightToBracket;
+    if (lowerAction === 'logout') return faRightFromBracket;
     return faCircleInfo;
   };
 
@@ -141,6 +148,8 @@ export default function FacultyAuditClient() {
           <option value="scenario">Scenarios</option>
           <option value="report">Reports</option>
           <option value="review">Reviews</option>
+          <option value="login">Logins</option>
+          <option value="logout">Logouts</option>
         </select>
         <button
           onClick={() => setShowClearConfirm(true)}
@@ -197,7 +206,7 @@ export default function FacultyAuditClient() {
           <table className="w-full">
             <thead className="bg-gray-50/50 border-b border-gray-200">
               <tr>
-                <th className="text-left py-4 px-6 font-semibold text-gray-600">Tab</th>
+                <th className="text-left py-4 px-6 font-semibold text-gray-600">Category</th>
                 <th className="text-left py-4 px-6 font-semibold text-gray-600">Action</th>
                 <th className="text-left py-4 px-6 font-semibold text-gray-600">Details</th>
                 <th className="text-left py-4 px-6 font-semibold text-gray-600">Faculty</th>
