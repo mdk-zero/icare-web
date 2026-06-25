@@ -708,6 +708,8 @@ export interface FacultyReport {
 
 export interface FacultyPatient {
   id: string;
+  subject_id?: number;
+  hadm_id?: number;
   name: string;
   age: number;
   gender: string;
@@ -715,13 +717,13 @@ export interface FacultyPatient {
   diagnosis: string;
   admission_date: string;
   vital_signs: {
-    heart_rate: number;
-    blood_pressure: string;
-    temperature: number;
-    respiratory_rate: number;
-    oxygen_saturation: number;
+    heart_rate: number | null;
+    blood_pressure: string | null;
+    temperature: number | null;
+    respiratory_rate: number | null;
+    oxygen_saturation: number | null;
   };
-  labs: any;
+  labs: Record<string, string | number | null>;
   mimic_id: string;
 }
 
@@ -963,47 +965,91 @@ export async function generateAIScenario(prompt: string): Promise<SimulationScen
   };
 }
 
-export async function fetchFacultyPatients(): Promise<FacultyPatient[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  return [
-    {
-      id: 'fpatient-001',
-      name: 'Juan Reyes',
-      age: 68,
-      gender: 'M',
-      room_number: 'Room 101',
-      diagnosis: 'Acute Myocardial Infarction',
-      admission_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      vital_signs: {
-        heart_rate: 98,
-        blood_pressure: '140/90',
-        temperature: 37.2,
-        respiratory_rate: 20,
-        oxygen_saturation: 96,
-      },
-      labs: { troponin: '2.5 ng/mL', creatinine: '1.1 mg/dL' },
-      mimic_id: 'mimic-001',
-    },
-    {
-      id: 'fpatient-002',
-      name: 'Maria Santos',
-      age: 45,
-      gender: 'F',
-      room_number: 'Room 102',
-      diagnosis: 'Type 2 Diabetes',
-      admission_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      vital_signs: {
-        heart_rate: 72,
-        blood_pressure: '120/80',
-        temperature: 37.0,
-        respiratory_rate: 16,
-        oxygen_saturation: 98,
-      },
-      labs: { glucose: '240 mg/dL', HbA1c: '8.2%' },
-      mimic_id: 'mimic-002',
-    },
-  ];
+export async function fetchFacultyPatients(search?: string): Promise<FacultyPatient[]> {
+  try {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    const query = params.toString();
+    const res = await fetch(`/api/faculty/patients${query ? `?${query}` : ''}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      console.error('fetchFacultyPatients() failed', res.status);
+      return [];
+    }
+    const json = (await res.json()) as { patients: FacultyPatient[] };
+    return json.patients ?? [];
+  } catch (err) {
+    console.error('fetchFacultyPatients() failed', err);
+    return [];
+  }
+}
+
+export async function createFacultyPatient(
+  patient: Partial<FacultyPatient>,
+): Promise<{ patient?: FacultyPatient; error?: string }> {
+  try {
+    const res = await fetch('/api/faculty/patients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(patient),
+    });
+
+    const json = (await res.json()) as { patient?: FacultyPatient; error?: string };
+    if (!res.ok) {
+      return { error: json.error || 'Unable to create patient' };
+    }
+    return { patient: json.patient };
+  } catch (err) {
+    console.error('createFacultyPatient() failed', err);
+    return { error: 'Unable to create patient. Please try again.' };
+  }
+}
+
+export async function updateFacultyPatient(
+  id: string,
+  patient: Partial<FacultyPatient>,
+): Promise<{ patient?: FacultyPatient; error?: string }> {
+  try {
+    const res = await fetch('/api/faculty/patients', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id, ...patient }),
+    });
+
+    const json = (await res.json()) as { patient?: FacultyPatient; error?: string };
+    if (!res.ok) {
+      return { error: json.error || 'Unable to update patient' };
+    }
+    return { patient: json.patient };
+  } catch (err) {
+    console.error('updateFacultyPatient() failed', err);
+    return { error: 'Unable to update patient. Please try again.' };
+  }
+}
+
+export async function deleteFacultyPatient(
+  id: string,
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/faculty/patients', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id }),
+    });
+
+    const json = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok) {
+      return { error: json.error || 'Unable to delete patient' };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('deleteFacultyPatient() failed', err);
+    return { error: 'Unable to delete patient. Please try again.' };
+  }
 }
 
 export async function fetchFacultyPatientDetail(patientId: string): Promise<{ patient: FacultyPatient; clinical_decision_support: any } | null> {

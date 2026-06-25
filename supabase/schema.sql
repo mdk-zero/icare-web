@@ -59,3 +59,59 @@ create index if not exists idx_password_resets_user_created
 -- Only service-role/admin operations should touch this table directly.
 -- No RLS policy is needed because server-side code bypasses RLS with the
 -- service role key, and end users never query it themselves.
+
+-- =================================================================
+-- Patients table for MIMIC-IV demo (and eventually full MIMIC-IV) data
+-- =================================================================
+
+create table if not exists public.patients (
+  id uuid primary key default gen_random_uuid(),
+  subject_id bigint not null,
+  hadm_id bigint,
+  name text not null,
+  age int,
+  gender text,
+  room_number text,
+  diagnosis text,
+  admission_date timestamptz,
+  vital_signs jsonb not null default '{}'::jsonb,
+  labs jsonb not null default '{}'::jsonb,
+  mimic_id text not null,
+  created_by uuid references public.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_patients_subject_id on public.patients(subject_id);
+create index if not exists idx_patients_hadm_id on public.patients(hadm_id);
+create index if not exists idx_patients_mimic_id on public.patients(mimic_id);
+create index if not exists idx_patients_created_by on public.patients(created_by);
+
+alter table public.patients
+  drop constraint if exists uq_patients_subject_hadm;
+alter table public.patients
+  add constraint uq_patients_subject_hadm unique (subject_id, hadm_id);
+
+alter table public.patients enable row level security;
+
+create policy "faculty and students can read patients" on public.patients
+  for select using (
+    exists (
+      select 1 from public.users
+      where public.users.id = auth.uid()
+        and public.users.role in ('student', 'faculty', 'admin')
+    )
+  );
+
+create or replace function public.set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_patients_updated_at on public.patients;
+create trigger trg_patients_updated_at
+  before update on public.patients
+  for each row execute function public.set_updated_at();

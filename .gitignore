@@ -44,3 +44,6 @@ next-env.d.ts
 
 # documents
 /docs
+
+# MIMIC-IV Demo data (downloaded from PhysioNet)
+/data/mimic-iv-demo
