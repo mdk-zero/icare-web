@@ -30,6 +30,7 @@ import {
   fetchFacultyScenarios,
   createScenario,
   generateAIScenario,
+  suggestAIScenario,
   SimulationScenario,
   fetchFacultyStudents,
   FacultyStudent,
@@ -70,6 +71,12 @@ export default function FacultyScenariosClient() {
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [aiPreview, setAiPreview] = useState<Partial<SimulationScenario> | null>(null);
+  const [savingAIPreview, setSavingAIPreview] = useState(false);
+  const [suggestDifficulty, setSuggestDifficulty] = useState("");
+  const [suggestCategory, setSuggestCategory] = useState("");
+  const [suggesting, setSuggesting] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [patients, setPatients] = useState<FacultyPatient[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
 
@@ -190,11 +197,56 @@ export default function FacultyScenariosClient() {
   const handleGenerateAI = async () => {
     if (!aiPrompt.trim()) return;
     setGenerating(true);
+    setAiPreview(null);
+    setAiError(null);
 
-    const newScenario = await generateAIScenario(
+    const preview = await generateAIScenario(
       aiPrompt,
       selectedPatientId || undefined
     );
+
+    if ("error" in preview) {
+      setAiError(preview.error);
+    } else {
+      setAiPreview(preview);
+    }
+    setGenerating(false);
+  };
+
+  const handleSuggestAI = async () => {
+    setSuggesting(true);
+    setAiPreview(null);
+    setAiError(null);
+
+    const result = await suggestAIScenario(
+      suggestDifficulty || undefined,
+      suggestCategory || undefined,
+      selectedPatientId || undefined
+    );
+
+    if ("error" in result) {
+      setAiError(result.error);
+    } else {
+      setAiPrompt(result.prompt);
+      setSelectedPatientId(result.patient_id);
+      setAiPreview(result.scenario);
+    }
+    setSuggesting(false);
+  };
+
+  const handleSaveAIPreview = async () => {
+    if (!aiPreview) return;
+    setSavingAIPreview(true);
+
+    const newScenario = await createScenario({
+      title: aiPreview.title,
+      description: aiPreview.description,
+      difficulty: aiPreview.difficulty,
+      category: aiPreview.category,
+      patient_case: aiPreview.patient_case,
+      learning_objectives: aiPreview.learning_objectives,
+      is_ai_generated: true,
+    });
 
     if (newScenario) {
       setScenarios([newScenario, ...scenarios]);
@@ -205,7 +257,7 @@ export default function FacultyScenariosClient() {
           faculty_name: faculty.name,
           tab: "scenarios",
           action: "ai_generate_scenario",
-          details: `AI generated scenario: ${newScenario.title}`,
+          details: `AI generated and saved scenario: ${newScenario.title}`,
           target_type: "scenario",
           target_id: newScenario.id,
           metadata: {
@@ -215,17 +267,34 @@ export default function FacultyScenariosClient() {
         });
       }
     }
-    setGenerating(false);
+
+    setSavingAIPreview(false);
     setShowAIModal(false);
+    setAiPreview(null);
     setAiPrompt("");
     setSelectedPatientId("");
     setPatientSearchQuery("");
+  };
+
+  const closeAIModal = () => {
+    setShowAIModal(false);
+    setAiPreview(null);
+    setAiPrompt("");
+    setSelectedPatientId("");
+    setPatientSearchQuery("");
+    setSuggestDifficulty("");
+    setSuggestCategory("");
+    setAiError(null);
   };
 
   const openAIModal = () => {
     setAiPrompt("");
     setSelectedPatientId("");
     setPatientSearchQuery("");
+    setAiPreview(null);
+    setSuggestDifficulty("");
+    setSuggestCategory("");
+    setAiError(null);
     setShowAIModal(true);
     void loadPatientsForSelector();
   };
@@ -280,30 +349,34 @@ export default function FacultyScenariosClient() {
     if (!selectedScenario || selectedStudents.length === 0 || !assignDeadline) return;
 
     setAssigning(true);
-    await assignScenarioToStudents(
+    const assignments = await assignScenarioToStudents(
       selectedScenario.id,
       selectedStudents,
       assignDeadline,
       assignRequired
     );
 
-    const faculty = getCurrentFacultyUser();
-    if (faculty) {
-      logAuditAction({
-        faculty_id: faculty.id,
-        faculty_name: faculty.name,
-        tab: "scenarios",
-        action: "assign_scenario",
-        details: `Assigned scenario "${selectedScenario.title}" to ${selectedStudents.length} student(s)`,
-        target_type: "scenario",
-        target_id: selectedScenario.id,
-        metadata: {
-          scenario_title: selectedScenario.title,
-          student_count: selectedStudents.length,
-          required: assignRequired,
-        },
-      });
+    if (assignments.length > 0) {
+      await loadScenarios();
+      const faculty = getCurrentFacultyUser();
+      if (faculty) {
+        logAuditAction({
+          faculty_id: faculty.id,
+          faculty_name: faculty.name,
+          tab: "scenarios",
+          action: "assign_scenario",
+          details: `Assigned scenario "${selectedScenario.title}" to ${selectedStudents.length} student(s)`,
+          target_type: "scenario",
+          target_id: selectedScenario.id,
+          metadata: {
+            scenario_title: selectedScenario.title,
+            student_count: selectedStudents.length,
+            required: assignRequired,
+          },
+        });
+      }
     }
+
     setAssigning(false);
     setShowAssignModal(false);
     setSelectedScenario(null);
@@ -615,15 +688,31 @@ export default function FacultyScenariosClient() {
                 </div>
                 <div>
                   <label className={labelClassName}>Category</label>
-                  <input
-                    type="text"
-                    value={createForm.category}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, category: e.target.value })
-                    }
-                    placeholder="e.g. Cardiac Emergency"
-                    className={inputClassName}
-                  />
+                  <div className="relative">
+                    <select
+                      value={createForm.category}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, category: e.target.value })
+                      }
+                      className={selectClassName + " pr-10"}
+                    >
+                      <option value="">Select category</option>
+                      <option value="Cardiac Emergency">Cardiac Emergency</option>
+                      <option value="Respiratory Emergency">Respiratory Emergency</option>
+                      <option value="Neurological Emergency">Neurological Emergency</option>
+                      <option value="Trauma">Trauma</option>
+                      <option value="Medical-Surgical">Medical-Surgical</option>
+                      <option value="Patient Education">Patient Education</option>
+                      <option value="Infection Management">Infection Management</option>
+                      <option value="Critical Care">Critical Care</option>
+                      <option value="Medication Safety">Medication Safety</option>
+                      <option value="General">General</option>
+                    </select>
+                    <FontAwesomeIcon
+                      icon={faChevronDown}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                    />
+                  </div>
                 </div>
               </div>
               <div>
@@ -676,22 +765,91 @@ export default function FacultyScenariosClient() {
                 </div>
               </div>
               <button
-                onClick={() => setShowAIModal(false)}
+                onClick={closeAIModal}
                 className="p-2 hover:bg-gray-200 rounded-xl transition-colors"
               >
                 <FontAwesomeIcon icon={faTimes} className="w-5 h-5 text-gray-500" />
               </button>
             </div>
             <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClassName}>Suggested Difficulty</label>
+                  <div className="relative">
+                    <select
+                      value={suggestDifficulty}
+                      onChange={(e) => setSuggestDifficulty(e.target.value)}
+                      className={selectClassName + " pr-10"}
+                    >
+                      <option value="">Any difficulty</option>
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                    <FontAwesomeIcon
+                      icon={faChevronDown}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClassName}>Suggested Category</label>
+                  <div className="relative">
+                    <select
+                      value={suggestCategory}
+                      onChange={(e) => setSuggestCategory(e.target.value)}
+                      className={selectClassName + " pr-10"}
+                    >
+                      <option value="">Any category</option>
+                      <option value="Cardiac Emergency">Cardiac Emergency</option>
+                      <option value="Respiratory Emergency">Respiratory Emergency</option>
+                      <option value="Neurological Emergency">Neurological Emergency</option>
+                      <option value="Trauma">Trauma</option>
+                      <option value="Medical-Surgical">Medical-Surgical</option>
+                      <option value="Patient Education">Patient Education</option>
+                      <option value="Infection Management">Infection Management</option>
+                      <option value="Critical Care">Critical Care</option>
+                      <option value="Medication Safety">Medication Safety</option>
+                      <option value="General">General</option>
+                    </select>
+                    <FontAwesomeIcon
+                      icon={faChevronDown}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className={labelClassName}>Prompt</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={labelClassName}>Prompt</label>
+                  <button
+                    type="button"
+                    onClick={handleSuggestAI}
+                    disabled={suggesting || patients.length === 0}
+                    className="text-sm flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    {suggesting && <FontAwesomeIcon icon={faSpinner} spin className="w-3.5 h-3.5" />}
+                    <FontAwesomeIcon icon={faRobot} className="w-3.5 h-3.5" />
+                    {suggesting ? "Suggesting..." : "Suggest Scenario"}
+                  </button>
+                </div>
                 <textarea
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="Describe the clinical scenario you want to generate..."
+                  placeholder="Describe the clinical scenario you want to generate, or click Suggest Scenario to auto-fill..."
                   rows={4}
                   className={inputClassName + " resize-none"}
                 />
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Suggest uses one AI request and picks a patient with abnormal labs when none is selected.
+                </p>
+                {aiError && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5">
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-red-700">{aiError}</p>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -836,23 +994,93 @@ export default function FacultyScenariosClient() {
                   </div>
                 </div>
               </div>
+
+              {/* AI Preview */}
+              {aiPreview && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                    <FontAwesomeIcon icon={faRobot} className="text-purple-600" />
+                    <h4 className="font-bold text-gray-900">Generated Preview</h4>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title</p>
+                      <p className="text-sm font-medium text-gray-900">{aiPreview.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</p>
+                      <p className="text-sm text-gray-700">{aiPreview.description}</p>
+                    </div>
+                    <div className="flex gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Difficulty</p>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${getDifficultyColor(aiPreview.difficulty || 'intermediate')}`}>
+                          {aiPreview.difficulty}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</p>
+                        <p className="text-sm text-gray-700">{aiPreview.category}</p>
+                      </div>
+                    </div>
+                    {Array.isArray(aiPreview.learning_objectives) && aiPreview.learning_objectives.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Learning Objectives</p>
+                        <ul className="list-disc list-inside text-sm text-gray-700">
+                          {aiPreview.learning_objectives.map((obj, i) => (
+                            <li key={i}>{obj}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
-              <button
-                onClick={() => setShowAIModal(false)}
-                className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleGenerateAI}
-                disabled={generating || !aiPrompt.trim()}
-                className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2"
-              >
-                {generating && <FontAwesomeIcon icon={faSpinner} spin className="w-4 h-4" />}
-                <FontAwesomeIcon icon={faBolt} className="w-4 h-4" />
-                {generating ? "Generating..." : "Generate Scenario"}
-              </button>
+              {!aiPreview ? (
+                <>
+                  <button
+                    onClick={closeAIModal}
+                    className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleGenerateAI}
+                    disabled={generating || !aiPrompt.trim()}
+                    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {generating && <FontAwesomeIcon icon={faSpinner} spin className="w-4 h-4" />}
+                    <FontAwesomeIcon icon={faBolt} className="w-4 h-4" />
+                    {generating ? "Generating..." : "Generate Scenario"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setAiPreview(null)}
+                    className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
+                  >
+                    Regenerate
+                  </button>
+                  <button
+                    onClick={closeAIModal}
+                    className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl font-medium transition-colors"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    onClick={handleSaveAIPreview}
+                    disabled={savingAIPreview}
+                    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {savingAIPreview && <FontAwesomeIcon icon={faSpinner} spin className="w-4 h-4" />}
+                    <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
+                    {savingAIPreview ? "Saving..." : "Save Scenario"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabase/server';
+import { readSession } from '@/app/lib/auth/session';
 import { sendStudentInvitationEmail } from '@/app/lib/auth/email';
 import { generateRandomPassword, hashPassword } from '@/app/lib/auth/password';
 
@@ -8,14 +9,43 @@ function isValidEmail(email: string): boolean {
 }
 
 export async function GET() {
+  const session = await readSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!['faculty', 'admin'].includes(session.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const supabase = getSupabaseAdmin();
 
-    const { data: students, error } = await supabase
+    // Admin can see all students; faculty only sees their own roster.
+    let query = supabase
       .from('users')
       .select('id, email, name, role, picture_url')
       .eq('role', 'student')
       .order('name', { ascending: true });
+
+    if (session.role === 'faculty') {
+      const { data: rosterIds, error: rosterError } = await supabase
+        .from('faculty_students')
+        .select('student_id')
+        .eq('faculty_id', session.uid);
+
+      if (rosterError) {
+        console.error('Failed to fetch faculty roster', rosterError);
+        return NextResponse.json({ error: 'Unable to fetch students' }, { status: 500 });
+      }
+
+      const ids = rosterIds?.map((r) => r.student_id) ?? [];
+      if (ids.length === 0) {
+        return NextResponse.json({ students: [] });
+      }
+      query = query.in('id', ids);
+    }
+
+    const { data: students, error } = await query;
 
     if (error) {
       console.error('Failed to fetch students', error);
@@ -30,6 +60,14 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await readSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!['faculty', 'admin'].includes(session.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -89,6 +127,15 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Failed to create student', insertError);
       return NextResponse.json({ error: 'Unable to create student' }, { status: 500 });
+    }
+
+    // Link the new student to the creating faculty's roster.
+    const { error: rosterError } = await supabase
+      .from('faculty_students')
+      .insert({ faculty_id: session.uid, student_id: student.id });
+
+    if (rosterError) {
+      console.error('Failed to link student to faculty roster', rosterError);
     }
 
     const origin = request.headers.get('origin') ?? 'http://localhost:3000';

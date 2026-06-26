@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx scripts/seed.ts",
-    "db:seed:mimic-demo": "tsx scripts/seed-mimic-demo.ts"
+    "db:seed:mimic-demo": "tsx scripts/seed-mimic-demo.ts",
+    "db:link-students": "tsx scripts/link-existing-students-to-faculty.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.2.0",

@@ -47,3 +47,6 @@ next-env.d.ts
 
 # MIMIC-IV Demo data (downloaded from PhysioNet)
 /data/mimic-iv-demo
+
+# Supabase CLI local state
+/supabase/.temp

@@ -2,9 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { SimulationScenario, ScenarioTask, submitScenarioPerformance } from "../../lib/api";
+import {
+  SimulationScenario,
+  ScenarioTask,
+  ScenarioAssignment,
+  submitScenarioPerformance,
+  fetchScenarioById,
+  fetchStudentScenarioAssignments,
+} from "../../lib/api";
 
-const mockTasks: ScenarioTask[] = [
+const defaultTasks: ScenarioTask[] = [
   { id: "t1", title: "Assess Patient Vital Signs", description: "Measure heart rate, blood pressure, temperature, and respiratory rate", category: "assessment", points: 10, is_completed: false },
   { id: "t2", title: "Review Medical History", description: "Check patient's allergies, current medications, and past conditions", category: "assessment", points: 10, is_completed: false },
   { id: "t3", title: "Perform Physical Examination", description: "Conduct head-to-toe physical assessment", category: "assessment", points: 15, is_completed: false },
@@ -15,40 +22,50 @@ const mockTasks: ScenarioTask[] = [
   { id: "t8", title: "Notify Healthcare Team", description: "Report significant findings to physician", category: "communication", points: 15, is_completed: false },
 ];
 
-const mockScenario: SimulationScenario = {
-  id: "1",
-  title: "Patient with Chest Pain - Acute Coronary Syndrome",
-  description: "A 55-year-old male presents with acute chest pain radiating to left arm. Assess, diagnose, and provide appropriate nursing interventions.",
-  difficulty: "advanced",
-  category: "Cardiovascular Nursing",
-  patient_case: {
-    chief_complaint: "Severe chest pain radiating to left arm, onset 2 hours ago",
-    vitals: { heart_rate: 110, blood_pressure: "160/95", temperature: 37.2, respiratory_rate: 24, oxygen_saturation: 94 },
-    medical_history: "Hypertension (10 years), Type 2 Diabetes (5 years), Smoking history (20 pack-years)",
-    physical_exam: "Patient diaphoretic, anxious, holding chest. Lung sounds clear bilaterally. No peripheral edema.",
-    diagnosis: "Acute Coronary Syndrome - STEMI",
-    treatment_plan: "Immediate aspirin, nitroglycerin, IV access, cardiac monitoring, prepare for PCI"
-  },
-  learning_objectives: [
-    "Demonstrate proper assessment of cardiac symptoms",
-    "Prioritize interventions for ACS patient",
-    "Apply evidence-based nursing care for acute chest pain",
-    "Effectively communicate with healthcare team"
-  ],
-  is_ai_generated: false,
-  student_count: 0,
-  created_at: "2024-01-15"
-};
-
 export default function ScenarioRunnerClient() {
   const router = useRouter();
   const params = useParams();
-  const [tasks, setTasks] = useState<ScenarioTask[]>(mockTasks);
+  const scenarioId = params.id as string;
+
+  const [scenario, setScenario] = useState<SimulationScenario | null>(null);
+  const [assignment, setAssignment] = useState<ScenarioAssignment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [tasks, setTasks] = useState<ScenarioTask[]>(defaultTasks);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
-  const [scenario, setScenario] = useState<SimulationScenario | null>(mockScenario);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [activeSection, setActiveSection] = useState<"patient" | "tasks" | "objectives">("patient");
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const [scenarioData, assignments] = await Promise.all([
+        fetchScenarioById(scenarioId),
+        fetchStudentScenarioAssignments(""),
+      ]);
+
+      if (!scenarioData) {
+        setError("Scenario not found or you do not have access.");
+        setLoading(false);
+        return;
+      }
+
+      const matchingAssignment = assignments.find((a) => a.scenario_id === scenarioId);
+      if (!matchingAssignment) {
+        setError("You have not been assigned this scenario.");
+        setLoading(false);
+        return;
+      }
+
+      setScenario(scenarioData);
+      setAssignment(matchingAssignment);
+      setLoading(false);
+    }
+
+    void load();
+  }, [scenarioId]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -89,14 +106,19 @@ export default function ScenarioRunnerClient() {
   };
 
   const handleComplete = async () => {
+    if (!assignment) return;
     const score = calculateScore();
     const performance = await submitScenarioPerformance(
-      params.id as string,
+      assignment.id,
       completedTasks,
       elapsedTime
     );
     setIsCompleted(true);
-    alert(`Simulation completed!\nScore: ${score}%\nTime: ${formatTime(elapsedTime)}`);
+    if (performance) {
+      alert(`Simulation completed!\nScore: ${performance.score}%\nTime: ${formatTime(performance.time_taken)}`);
+    } else {
+      alert(`Simulation completed!\nScore: ${score}%\nTime: ${formatTime(elapsedTime)}`);
+    }
   };
 
   const getCategoryColor = (category: string) => {
@@ -112,6 +134,35 @@ export default function ScenarioRunnerClient() {
 
   const progress = (completedTasks.length / tasks.length) * 100;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#1B6B7B] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading scenario...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !scenario) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <p className="text-red-600 mb-4">{error || "Unable to load scenario."}</p>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="px-4 py-2 bg-[#1B6B7B] text-white rounded-xl font-medium hover:bg-[#145a63]"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const patientCase = scenario.patient_case || {};
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -126,8 +177,8 @@ export default function ScenarioRunnerClient() {
               </svg>
             </button>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">{scenario?.title}</h1>
-              <p className="text-sm text-gray-500">{scenario?.category}</p>
+              <h1 className="text-lg font-bold text-gray-900">{scenario.title}</h1>
+              <p className="text-sm text-gray-500">{scenario.category}</p>
             </div>
           </div>
           
@@ -177,53 +228,65 @@ export default function ScenarioRunnerClient() {
               </div>
 
               <div className="p-6">
-                {activeSection === "patient" && scenario?.patient_case && (
+                {activeSection === "patient" && (
                   <div className="space-y-6">
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-red-100 rounded-lg">
-                          <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-semibold text-red-800">Chief Complaint</p>
-                          <p className="text-red-700">{scenario.patient_case.chief_complaint}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-3">Vital Signs</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                        {Object.entries(scenario.patient_case.vitals).map(([key, value]) => (
-                          <div key={key} className="bg-gray-50 rounded-lg p-3 text-center">
-                            <p className="text-xs text-gray-500 capitalize">{key.replace(/_/g, ' ')}</p>
-                            <p className="font-semibold text-gray-800">{String(value)}</p>
+                    {patientCase.chief_complaint && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-red-100 rounded-lg">
+                            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
                           </div>
-                        ))}
+                          <div>
+                            <p className="font-semibold text-red-800">Chief Complaint</p>
+                            <p className="text-red-700">{patientCase.chief_complaint}</p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Medical History</h3>
-                      <p className="text-gray-600">{scenario.patient_case.medical_history}</p>
-                    </div>
+                    {patientCase.vitals && Object.keys(patientCase.vitals).length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-3">Vital Signs</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                          {Object.entries(patientCase.vitals).map(([key, value]) => (
+                            <div key={key} className="bg-gray-50 rounded-lg p-3 text-center">
+                              <p className="text-xs text-gray-500 capitalize">{key.replace(/_/g, ' ')}</p>
+                              <p className="font-semibold text-gray-800">{String(value)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Physical Examination</h3>
-                      <p className="text-gray-600">{scenario.patient_case.physical_exam}</p>
-                    </div>
+                    {patientCase.medical_history && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Medical History</h3>
+                        <p className="text-gray-600">{patientCase.medical_history}</p>
+                      </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Diagnosis</h3>
-                      <p className="text-gray-800 font-medium">{scenario.patient_case.diagnosis}</p>
-                    </div>
+                    {patientCase.physical_exam && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Physical Examination</h3>
+                        <p className="text-gray-600">{patientCase.physical_exam}</p>
+                      </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Treatment Plan</h3>
-                      <p className="text-gray-600">{scenario.patient_case.treatment_plan}</p>
-                    </div>
+                    {patientCase.diagnosis && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Diagnosis</h3>
+                        <p className="text-gray-800 font-medium">{patientCase.diagnosis}</p>
+                      </div>
+                    )}
+
+                    {patientCase.treatment_plan && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Treatment Plan</h3>
+                        <p className="text-gray-600">{patientCase.treatment_plan}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -271,7 +334,7 @@ export default function ScenarioRunnerClient() {
 
                 {activeSection === "objectives" && (
                   <ul className="space-y-3">
-                    {scenario?.learning_objectives.map((objective, index) => (
+                    {scenario.learning_objectives?.map((objective, index) => (
                       <li key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                         <div className="w-6 h-6 rounded-full bg-[#1B6B7B]/10 flex items-center justify-center flex-shrink-0">
                           <span className="text-sm font-medium text-[#1B6B7B]">{index + 1}</span>
@@ -288,11 +351,11 @@ export default function ScenarioRunnerClient() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-gray-900">Completion Summary</h2>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  scenario?.difficulty === 'advanced' ? 'bg-red-100 text-red-700' :
-                  scenario?.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-700' :
+                  scenario.difficulty === 'advanced' ? 'bg-red-100 text-red-700' :
+                  scenario.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-700' :
                   'bg-green-100 text-green-700'
                 }`}>
-                  {scenario?.difficulty} difficulty
+                  {scenario.difficulty} difficulty
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">

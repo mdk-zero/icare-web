@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readSession } from '@/app/lib/auth/session';
 import { getSupabaseAdmin } from '@/app/lib/supabase/server';
+import { callOpenRouter } from '@/app/lib/ai/openrouter';
 
 function isFacultyOrAdmin(role: string | undefined): boolean {
   return role === 'faculty' || role === 'admin';
@@ -90,7 +91,11 @@ async function fetchPatient(supabase: ReturnType<typeof getSupabaseAdmin>, patie
   return data as unknown as PatientContext;
 }
 
-async function callGemini(prompt: string): Promise<Record<string, unknown>> {
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callGemini(prompt: string, attempt = 1): Promise<Record<string, unknown>> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not configured');
@@ -107,13 +112,23 @@ async function callGemini(prompt: string): Promise<Record<string, unknown>> {
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.7,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,
       },
     }),
   });
 
   if (!res.ok) {
     const text = await res.text();
+    // Daily quota errors won't resolve by retrying, so fall back immediately.
+    const isDailyQuota =
+      text.includes('QuotaFailure') || text.includes('GenerateRequestsPerDay');
+    // Retry on transient overload (503) or short-term rate limit (429) up to 3 times with backoff.
+    if ((res.status === 503 || (res.status === 429 && !isDailyQuota)) && attempt < 3) {
+      const delay = attempt * 1000;
+      console.warn(`Gemini returned ${res.status}, retrying in ${delay}ms (attempt ${attempt})`);
+      await sleep(delay);
+      return callGemini(prompt, attempt + 1);
+    }
     throw new Error(`Gemini API error (${res.status}): ${text}`);
   }
 
@@ -136,15 +151,77 @@ async function callGemini(prompt: string): Promise<Record<string, unknown>> {
     throw new Error('Gemini returned an empty response');
   }
 
-  if (json.candidates?.[0]?.finishReason && json.candidates[0].finishReason !== 'STOP') {
-    throw new Error(`Gemini generation stopped: ${json.candidates[0].finishReason}`);
-  }
-
   try {
     return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    throw new Error('Failed to parse Gemini response as JSON');
+  } catch (parseErr) {
+    if (attempt < 2) {
+      // Retry once if the model produced malformed or truncated JSON.
+      return callGemini(prompt, attempt + 1);
+    }
+    throw new Error('Failed to parse Gemini response as JSON after retry');
   }
+}
+
+async function callAI(prompt: string): Promise<Record<string, unknown>> {
+  try {
+    return await callGemini(prompt);
+  } catch (geminiErr) {
+    console.warn('Gemini failed, falling back to OpenRouter', geminiErr instanceof Error ? geminiErr.message : geminiErr);
+    try {
+      return await callOpenRouter(prompt);
+    } catch (openrouterErr) {
+      const messages = [
+        geminiErr instanceof Error ? geminiErr.message : 'Gemini failed',
+        openrouterErr instanceof Error ? openrouterErr.message : 'OpenRouter failed',
+      ];
+      throw new Error(messages.join('; '));
+    }
+  }
+}
+
+interface PatientCase {
+  chief_complaint: string;
+  vitals: {
+    heart_rate: number | null;
+    blood_pressure: string;
+    temperature: number | null;
+    respiratory_rate: number | null;
+    oxygen_saturation: number | null;
+  };
+  medical_history: string;
+  physical_exam: string;
+  diagnosis: string;
+  treatment_plan: string;
+}
+
+function pickString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function pickNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function sanitizePatientCase(input: unknown): PatientCase {
+  const raw = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
+  const rawVitals = raw.vitals && typeof raw.vitals === 'object'
+    ? (raw.vitals as Record<string, unknown>)
+    : {};
+
+  return {
+    chief_complaint: pickString(raw.chief_complaint),
+    vitals: {
+      heart_rate: pickNumber(rawVitals.heart_rate),
+      blood_pressure: pickString(rawVitals.blood_pressure),
+      temperature: pickNumber(rawVitals.temperature),
+      respiratory_rate: pickNumber(rawVitals.respiratory_rate),
+      oxygen_saturation: pickNumber(rawVitals.oxygen_saturation),
+    },
+    medical_history: pickString(raw.medical_history),
+    physical_exam: pickString(raw.physical_exam),
+    diagnosis: pickString(raw.diagnosis),
+    treatment_plan: pickString(raw.treatment_plan),
+  };
 }
 
 function sanitizeScenario(input: Record<string, unknown>): {
@@ -152,7 +229,7 @@ function sanitizeScenario(input: Record<string, unknown>): {
   description: string;
   difficulty: string;
   category: string;
-  patient_case: Record<string, unknown>;
+  patient_case: PatientCase;
   learning_objectives: string[];
 } {
   const validDifficulties = ['beginner', 'intermediate', 'advanced'];
@@ -170,9 +247,7 @@ function sanitizeScenario(input: Record<string, unknown>): {
     description: typeof input.description === 'string' ? input.description : '',
     difficulty,
     category: typeof input.category === 'string' ? input.category : 'AI Generated',
-    patient_case: input.patient_case && typeof input.patient_case === 'object'
-      ? (input.patient_case as Record<string, unknown>)
-      : {},
+    patient_case: sanitizePatientCase(input.patient_case),
     learning_objectives: learningObjectives.length > 0
       ? learningObjectives
       : ['Demonstrate clinical assessment skills', 'Apply evidence-based interventions'],
@@ -203,13 +278,31 @@ export async function POST(request: NextRequest) {
       patient = await fetchPatient(supabase, body.patient_id.trim());
     }
 
-    const generated = await callGemini(buildPrompt(prompt, patient));
+    const generated = await callAI(buildPrompt(prompt, patient));
     const scenario = sanitizeScenario(generated);
 
     return NextResponse.json({ scenario });
   } catch (err) {
+    const rawMessage = err instanceof Error ? err.message : 'Unable to generate scenario';
+    const lower = rawMessage.toLowerCase();
+    const isRateLimit =
+      rawMessage.includes('429') ||
+      lower.includes('rate limit') ||
+      lower.includes('quota exceeded') ||
+      lower.includes('resource_exhausted');
+
+    if (isRateLimit) {
+      console.warn('Generate scenario rate-limited by AI provider');
+      return NextResponse.json(
+        { error: 'AI providers are currently rate-limited. Please try again in a moment.' },
+        { status: 429 },
+      );
+    }
+
     console.error('Generate AI scenario failed', err);
-    const message = err instanceof Error ? err.message : 'Unable to generate scenario';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Unable to generate scenario. The AI service may be unavailable.' },
+      { status: 500 },
+    );
   }
 }

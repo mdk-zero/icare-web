@@ -834,43 +834,60 @@ export async function fetchFacultyDashboard(): Promise<{ stats: FacultyStats; re
 }
 
 export async function fetchFacultyStudents(riskLevel?: string, search?: string): Promise<FacultyStudent[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  let students = generateMockFacultyStudents();
-  
-  if (riskLevel && riskLevel !== 'all') {
-    students = students.filter(s => s.risk_level === riskLevel);
+  try {
+    const res = await fetch('/api/faculty/students', { credentials: 'include' });
+    const json = (await res.json()) as { students?: FacultyStudent[]; error?: string };
+    if (!res.ok) {
+      console.error('fetchFacultyStudents() failed', json.error);
+      return [];
+    }
+
+    let students = json.students ?? [];
+
+    // Risk level is not yet stored in the database; filtering by it is a no-op for now.
+    if (riskLevel && riskLevel !== 'all') {
+      // Placeholder: keep all students until risk scoring is implemented.
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      students = students.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.email.toLowerCase().includes(q)
+      );
+    }
+
+    return students;
+  } catch (err) {
+    console.error('fetchFacultyStudents() failed', err);
+    return [];
   }
-  
-  if (search) {
-    students = students.filter(s =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.email.toLowerCase().includes(search.toLowerCase())
-    );
-  }
-  
-  return students;
 }
 
 export async function fetchFacultyStudentDetail(studentId: string): Promise<{ student: FacultyStudent; performance_history: any[]; competencies: Record<string, number> } | null> {
-  await new Promise(resolve => setTimeout(resolve, 250));
-  
-  const students = generateMockFacultyStudents();
-  const student = students.find(s => s.student_id === studentId);
-  
-  if (!student) return null;
+  try {
+    const res = await fetch(`/api/faculty/students/${studentId}`, { credentials: 'include' });
+    const json = (await res.json()) as { student?: FacultyStudent; error?: string };
+    if (!res.ok || !json.student) {
+      console.error('fetchFacultyStudentDetail() failed', json.error);
+      return null;
+    }
 
-  return {
-    student,
-    performance_history: generateMockPerformanceLogs(studentId),
-    competencies: {
-      'Cardiac Assessment': 85,
-      'Vital Signs': 90,
-      'Patient Communication': 88,
-      'Diabetes Care': 72,
-      'Emergency Response': 78,
-    },
-  };
+    return {
+      student: json.student,
+      performance_history: await fetchStudentScenarioHistory(studentId),
+      competencies: {
+        'Cardiac Assessment': 85,
+        'Vital Signs': 90,
+        'Patient Communication': 88,
+        'Diabetes Care': 72,
+        'Emergency Response': 78,
+      },
+    };
+  } catch (err) {
+    console.error('fetchFacultyStudentDetail() failed', err);
+    return null;
+  }
 }
 
 export async function fetchAtRiskStudents(): Promise<FacultyStudent[]> {
@@ -880,67 +897,46 @@ export async function fetchAtRiskStudents(): Promise<FacultyStudent[]> {
 }
 
 export async function fetchFacultyScenarios(): Promise<SimulationScenario[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  return [
-    {
-      id: 'scenario-001',
-      title: 'Acute MI Response',
-      description: 'Manage a patient experiencing acute myocardial infarction',
-      difficulty: 'advanced',
-      category: 'Cardiac Emergency',
-      patient_case: { age: 68, condition: 'Acute MI', vitals: {} },
-      learning_objectives: [
-        'Recognize signs and symptoms of acute MI',
-        'Perform ECG interpretation',
-        'Administer appropriate interventions',
-      ],
-      is_ai_generated: false,
-      student_count: 12,
-      created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'scenario-002',
-      title: 'Diabetic Patient Education',
-      description: 'Educate a newly diagnosed diabetic patient',
-      difficulty: 'beginner',
-      category: 'Patient Education',
-      patient_case: { age: 45, condition: 'Type 2 Diabetes', vitals: {} },
-      learning_objectives: [
-        'Explain diabetes pathophysiology',
-        'Develop education plan',
-        'Assess patient understanding',
-      ],
-      is_ai_generated: true,
-      student_count: 8,
-      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
+  try {
+    const res = await fetch('/api/faculty/scenarios', {
+      credentials: 'include',
+    });
+    const json = (await res.json()) as { scenarios?: SimulationScenario[]; error?: string };
+    if (!res.ok) {
+      console.error('fetchFacultyScenarios() failed', json.error);
+      return [];
+    }
+    return json.scenarios ?? [];
+  } catch (err) {
+    console.error('fetchFacultyScenarios() failed', err);
+    return [];
+  }
 }
 
 export async function createScenario(scenario: Partial<SimulationScenario>): Promise<SimulationScenario | null> {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const newScenario: SimulationScenario = {
-    id: `scenario-${Date.now()}`,
-    title: scenario.title || 'New Scenario',
-    description: scenario.description || '',
-    difficulty: scenario.difficulty || 'intermediate',
-    category: scenario.category || 'General',
-    patient_case: scenario.patient_case || {},
-    learning_objectives: scenario.learning_objectives || [],
-    is_ai_generated: false,
-    student_count: 0,
-    created_at: new Date().toISOString(),
-  };
-  
-  return newScenario;
+  try {
+    const res = await fetch('/api/faculty/scenarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(scenario),
+    });
+    const json = (await res.json()) as { scenario?: SimulationScenario; error?: string };
+    if (!res.ok || !json.scenario) {
+      console.error('createScenario() failed', json.error);
+      return null;
+    }
+    return json.scenario;
+  } catch (err) {
+    console.error('createScenario() failed', err);
+    return null;
+  }
 }
 
 export async function generateAIScenario(
   prompt: string,
   patientId?: string,
-): Promise<SimulationScenario | null> {
+): Promise<Partial<SimulationScenario> | { error: string }> {
   try {
     const res = await fetch('/api/faculty/scenarios/generate', {
       method: 'POST',
@@ -951,12 +947,10 @@ export async function generateAIScenario(
 
     const json = (await res.json()) as { scenario?: Partial<SimulationScenario>; error?: string };
     if (!res.ok || !json.scenario) {
-      console.error('generateAIScenario() failed', json.error);
-      return null;
+      return { error: json.error || `Request failed (${res.status})` };
     }
 
     return {
-      id: `scenario-ai-${Date.now()}`,
       title: json.scenario.title || 'AI Generated Scenario',
       description: json.scenario.description || prompt,
       difficulty: json.scenario.difficulty || 'intermediate',
@@ -964,11 +958,98 @@ export async function generateAIScenario(
       patient_case: json.scenario.patient_case || { generated_by_ai: true },
       learning_objectives: json.scenario.learning_objectives || ['Demonstrate clinical assessment skills'],
       is_ai_generated: true,
-      student_count: 0,
-      created_at: new Date().toISOString(),
     };
   } catch (err) {
-    console.error('generateAIScenario() failed', err);
+    return { error: err instanceof Error ? err.message : 'Unable to generate scenario' };
+  }
+}
+
+export async function suggestAIScenario(
+  difficulty?: string,
+  category?: string,
+  patientId?: string,
+): Promise<
+  | { scenario: Partial<SimulationScenario>; patient_id: string; prompt: string }
+  | { error: string }
+> {
+  try {
+    const res = await fetch('/api/faculty/scenarios/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ difficulty, category, patient_id: patientId }),
+    });
+
+    const json = (await res.json()) as {
+      scenario?: Partial<SimulationScenario>;
+      patient_id?: string;
+      prompt?: string;
+      error?: string;
+    };
+
+    if (!res.ok || !json.scenario || !json.patient_id || !json.prompt) {
+      return { error: json.error || `Request failed (${res.status})` };
+    }
+
+    return {
+      scenario: json.scenario,
+      patient_id: json.patient_id,
+      prompt: json.prompt,
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Unable to suggest scenario' };
+  }
+}
+
+export async function updateScenario(
+  id: string,
+  scenario: Partial<SimulationScenario>,
+): Promise<SimulationScenario | null> {
+  try {
+    const res = await fetch(`/api/faculty/scenarios/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(scenario),
+    });
+    const json = (await res.json()) as { scenario?: SimulationScenario; error?: string };
+    if (!res.ok || !json.scenario) {
+      console.error('updateScenario() failed', json.error);
+      return null;
+    }
+    return json.scenario;
+  } catch (err) {
+    console.error('updateScenario() failed', err);
+    return null;
+  }
+}
+
+export async function deleteScenario(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/faculty/scenarios/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('deleteScenario() failed', err);
+    return false;
+  }
+}
+
+export async function fetchScenarioById(id: string): Promise<SimulationScenario | null> {
+  try {
+    const res = await fetch(`/api/scenarios/${id}`, {
+      credentials: 'include',
+    });
+    const json = (await res.json()) as { scenario?: SimulationScenario; error?: string };
+    if (!res.ok || !json.scenario) {
+      console.error('fetchScenarioById() failed', json.error);
+      return null;
+    }
+    return json.scenario;
+  } catch (err) {
+    console.error('fetchScenarioById() failed', err);
     return null;
   }
 }
@@ -1321,45 +1402,22 @@ export async function getClinicalDecisionSupport(patientCase: any): Promise<any 
 }
 
 export async function fetchScenarioAssignments(scenarioId?: string): Promise<ScenarioAssignment[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  const assignments: ScenarioAssignment[] = [
-    {
-      id: 'assign-001',
-      scenario_id: 'scenario-001',
-      scenario_title: 'Acute MI Response',
-      student_id: 'student-001',
-      student_name: 'Maria Cruz',
-      assigned_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'in_progress',
-      required: true,
-      score: 85,
-      completed_at: undefined,
-      time_taken: 2400,
-    },
-    {
-      id: 'assign-002',
-      scenario_id: 'scenario-002',
-      scenario_title: 'Diabetic Patient Education',
-      student_id: 'student-002',
-      student_name: 'Juan Reyes',
-      assigned_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'pending',
-      required: true,
-      score: undefined,
-      completed_at: undefined,
-      time_taken: undefined,
-    },
-  ];
-
-  let filtered = assignments;
-  if (scenarioId) {
-    filtered = assignments.filter(a => a.scenario_id === scenarioId);
+  try {
+    const url = scenarioId
+      ? `/api/faculty/scenarios/assignments?scenario_id=${encodeURIComponent(scenarioId)}`
+      : '/api/faculty/scenarios/assignments';
+    const res = await fetch(url, { credentials: 'include' });
+    const json = (await res.json()) as { assignments?: ScenarioAssignment[]; error?: string };
+    if (!res.ok) {
+      console.error('fetchScenarioAssignments() failed', json.error);
+      return [];
+    }
+    const assignments = json.assignments ?? [];
+    return scenarioId ? assignments.filter((a) => a.scenario_id === scenarioId) : assignments;
+  } catch (err) {
+    console.error('fetchScenarioAssignments() failed', err);
+    return [];
   }
-
-  return filtered;
 }
 
 export async function assignScenarioToStudents(
@@ -1368,60 +1426,79 @@ export async function assignScenarioToStudents(
   deadline: string,
   required: boolean
 ): Promise<ScenarioAssignment[]> {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  return studentIds.map((studentId, index) => ({
-    id: `assign-${Date.now()}-${index}`,
-    scenario_id: scenarioId,
-    scenario_title: 'Assigned Scenario',
-    student_id: studentId,
-    student_name: 'Student',
-    assigned_at: new Date().toISOString(),
-    deadline,
-    status: 'pending' as const,
-    required,
-  }));
+  try {
+    const res = await fetch(`/api/faculty/scenarios/${scenarioId}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ student_ids: studentIds, deadline, required }),
+    });
+    const json = (await res.json()) as { assignments?: ScenarioAssignment[]; error?: string };
+    if (!res.ok || !json.assignments) {
+      console.error('assignScenarioToStudents() failed', json.error);
+      return [];
+    }
+    return json.assignments;
+  } catch (err) {
+    console.error('assignScenarioToStudents() failed', err);
+    return [];
+  }
 }
 
-export async function fetchStudentScenarioAssignments(studentId: string): Promise<ScenarioAssignment[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  return [
-    {
-      id: 'assign-001',
-      scenario_id: 'scenario-001',
-      scenario_title: 'Acute MI Response',
-      student_id: studentId,
-      student_name: 'Maria Cruz',
-      assigned_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'in_progress',
-      required: true,
-      score: 85,
-    },
-  ];
+export async function fetchStudentScenarioAssignments(_studentId: string): Promise<ScenarioAssignment[]> {
+  try {
+    const res = await fetch('/api/student/scenarios', { credentials: 'include' });
+    const json = (await res.json()) as { assignments?: ScenarioAssignment[]; error?: string };
+    if (!res.ok) {
+      console.error('fetchStudentScenarioAssignments() failed', json.error);
+      return [];
+    }
+    return json.assignments ?? [];
+  } catch (err) {
+    console.error('fetchStudentScenarioAssignments() failed', err);
+    return [];
+  }
 }
 
 export async function submitScenarioPerformance(
-  scenarioId: string,
+  assignmentId: string,
   completedTasks: string[],
   timeTaken: number
 ): Promise<ScenarioPerformance | null> {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  return {
-    id: `perf-${Date.now()}`,
-    student_id: 'student-001',
-    student_name: 'Maria Cruz',
-    scenario_id: scenarioId,
-    scenario_title: 'Scenario Title',
-    score: 85,
-    max_score: 100,
-    time_taken: timeTaken,
-    completed_tasks: completedTasks,
-    total_tasks: 8,
-    completed_at: new Date().toISOString(),
-  };
+  try {
+    // Derive a simple score from completed tasks (placeholder scoring).
+    const totalTasks = 8;
+    const score = Math.round((completedTasks.length / totalTasks) * 100);
+
+    const res = await fetch(`/api/student/scenarios/${assignmentId}/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ score, time_taken: timeTaken }),
+    });
+    const json = (await res.json()) as { assignment?: ScenarioAssignment; error?: string };
+    if (!res.ok || !json.assignment) {
+      console.error('submitScenarioPerformance() failed', json.error);
+      return null;
+    }
+
+    return {
+      id: json.assignment.id,
+      student_id: json.assignment.student_id,
+      student_name: json.assignment.student_name,
+      scenario_id: json.assignment.scenario_id,
+      scenario_title: json.assignment.scenario_title,
+      score: json.assignment.score ?? 0,
+      max_score: 100,
+      time_taken: json.assignment.time_taken ?? 0,
+      completed_tasks: completedTasks,
+      total_tasks: totalTasks,
+      completed_at: json.assignment.completed_at ?? new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error('submitScenarioPerformance() failed', err);
+    return null;
+  }
 }
 
 export async function createFacultyStudent(
@@ -1522,21 +1599,32 @@ export async function deleteStudentUser(
 }
 
 export async function fetchStudentScenarioHistory(studentId: string): Promise<ScenarioPerformance[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  return [
-    {
-      id: 'perf-001',
-      student_id: studentId,
-      student_name: 'Maria Cruz',
-      scenario_id: 'scenario-001',
-      scenario_title: 'Acute MI Response',
-      score: 85,
+  try {
+    const res = await fetch(`/api/faculty/scenarios/assignments?student_id=${encodeURIComponent(studentId)}`, {
+      credentials: 'include',
+    });
+    const json = (await res.json()) as { assignments?: ScenarioAssignment[]; error?: string };
+    if (!res.ok) {
+      console.error('fetchStudentScenarioHistory() failed', json.error);
+      return [];
+    }
+
+    const completed = (json.assignments ?? []).filter((a) => a.status === 'completed');
+    return completed.map((a) => ({
+      id: a.id,
+      student_id: a.student_id,
+      student_name: a.student_name,
+      scenario_id: a.scenario_id,
+      scenario_title: a.scenario_title,
+      score: a.score ?? 0,
       max_score: 100,
-      time_taken: 2400,
-      completed_tasks: ['Assessment', 'Intervention', 'Documentation'],
+      time_taken: a.time_taken ?? 0,
+      completed_tasks: [],
       total_tasks: 8,
-      completed_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
+      completed_at: a.completed_at ?? a.assigned_at,
+    }));
+  } catch (err) {
+    console.error('fetchStudentScenarioHistory() failed', err);
+    return [];
+  }
 }
