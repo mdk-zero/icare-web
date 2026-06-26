@@ -23,6 +23,13 @@ import {
   FacultyPatient,
 } from "../../lib/api";
 
+const inputClassName =
+  "w-full px-4 py-3 bg-white border border-gray-400 rounded-xl text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/30 focus:border-[#1B6B7B] focus:bg-white transition-all text-sm shadow-sm";
+
+const labelClassName = "block text-sm font-bold text-gray-800 mb-2";
+
+const vitalLabelClassName = "block text-xs font-bold text-gray-700 mb-1.5";
+
 interface PatientForm {
   name: string;
   age: string;
@@ -282,7 +289,7 @@ export default function FacultyPatientsClient() {
             placeholder="Search patients, diagnosis, MIMIC ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+            className={inputClassName + " pl-10"}
           />
         </div>
         <button
@@ -418,19 +425,30 @@ export default function FacultyPatientsClient() {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">
-                {editingPatient ? "Edit Patient" : "Add Patient"}
-              </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#1B6B7B]/10 rounded-xl flex items-center justify-center">
+                  <FontAwesomeIcon icon={editingPatient ? faPen : faPlus} className="text-[#1B6B7B] w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">
+                    {editingPatient ? "Edit Patient" : "Add Patient"}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {editingPatient ? "Update patient record" : "Create a new patient record"}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={closeModal}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-200 rounded-xl transition-colors"
               >
-                <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
+                <FontAwesomeIcon icon={faTimes} className="w-5 h-5 text-gray-500" />
               </button>
             </div>
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {error && (
@@ -439,7 +457,7 @@ export default function FacultyPatientsClient() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className={labelClassName}>
                     Full Name
                   </label>
                   <input
@@ -447,16 +465,16 @@ export default function FacultyPatientsClient() {
                     type="text"
                     value={form.name || ""}
                     onChange={(e) => updateFormField("name", e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                    className={inputClassName}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                  <label className={labelClassName}>Gender</label>
                   <select
                     required
                     value={form.gender || ""}
                     onChange={(e) => updateFormField("gender", e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                    className={inputClassName}
                   >
                     <option value="">Select gender</option>
                     <option value="M">Male</option>
@@ -465,7 +483,7 @@ export default function FacultyPatientsClient() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                  <label className={labelClassName}>Age</label>
                   <input
                     required
                     type="number"
@@ -473,22 +491,22 @@ export default function FacultyPatientsClient() {
                     max={150}
                     value={form.age ?? ""}
                     onChange={(e) => updateFormField("age", e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                    className={inputClassName}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className={labelClassName}>
                     Room Number
                   </label>
                   <input
                     type="text"
                     value={form.room_number || ""}
                     onChange={(e) => updateFormField("room_number", e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                    className={inputClassName}
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className={labelClassName}>
                     Diagnosis
                   </label>
                   <input
@@ -496,11 +514,11 @@ export default function FacultyPatientsClient() {
                     type="text"
                     value={form.diagnosis || ""}
                     onChange={(e) => updateFormField("diagnosis", e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                    className={inputClassName}
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className={labelClassName}>
                     Admission Date
                   </label>
                   <input
@@ -508,30 +526,30 @@ export default function FacultyPatientsClient() {
                     type="datetime-local"
                     value={form.admission_date || ""}
                     onChange={(e) => updateFormField("admission_date", e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                    className={inputClassName}
                   />
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <FontAwesomeIcon icon={faHeartPulse} className="w-4 h-4 text-red-500" />
                   Vital Signs
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className={vitalLabelClassName}>
                       Heart Rate (bpm)
                     </label>
                     <input
                       type="number"
                       value={form.vital_signs?.heart_rate ?? ""}
                       onChange={(e) => updateVitalField("heart_rate", e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                      className={inputClassName}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className={vitalLabelClassName}>
                       Blood Pressure
                     </label>
                     <input
@@ -539,11 +557,11 @@ export default function FacultyPatientsClient() {
                       placeholder="120/80"
                       value={form.vital_signs?.blood_pressure || ""}
                       onChange={(e) => updateVitalField("blood_pressure", e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                      className={inputClassName}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className={vitalLabelClassName}>
                       Temperature (°C)
                     </label>
                     <input
@@ -551,22 +569,22 @@ export default function FacultyPatientsClient() {
                       step="0.1"
                       value={form.vital_signs?.temperature ?? ""}
                       onChange={(e) => updateVitalField("temperature", e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                      className={inputClassName}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className={vitalLabelClassName}>
                       Respiratory Rate
                     </label>
                     <input
                       type="number"
                       value={form.vital_signs?.respiratory_rate ?? ""}
                       onChange={(e) => updateVitalField("respiratory_rate", e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                      className={inputClassName}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className={vitalLabelClassName}>
                       SpO2 (%)
                     </label>
                     <input
@@ -575,7 +593,7 @@ export default function FacultyPatientsClient() {
                       max={100}
                       value={form.vital_signs?.oxygen_saturation ?? ""}
                       onChange={(e) => updateVitalField("oxygen_saturation", e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/20 focus:border-[#1B6B7B] text-sm"
+                      className={inputClassName}
                     />
                   </div>
                 </div>
@@ -585,14 +603,14 @@ export default function FacultyPatientsClient() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#1B6B7B] hover:bg-[#145a68] disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B6B7B] hover:bg-[#145a68] disabled:opacity-60 text-white font-medium rounded-xl transition-colors"
                 >
                   {saving && <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />}
                   <FontAwesomeIcon icon={faSave} className="w-4 h-4" />
@@ -602,6 +620,7 @@ export default function FacultyPatientsClient() {
             </form>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

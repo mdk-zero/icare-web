@@ -380,7 +380,7 @@ export default function FacultyStudentsClient() {
             />
             <FontAwesomeIcon
               icon={faMagnifyingGlass}
-              className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+              className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
             />
           </div>
           <select
@@ -399,8 +399,16 @@ export default function FacultyStudentsClient() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-gray-900">Create New Student</h2>
+            <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#1B6B7B]/10 rounded-xl flex items-center justify-center">
+                  <FontAwesomeIcon icon={faPlus} className="text-[#1B6B7B] w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Create New Student</h2>
+                  <p className="text-sm text-gray-500">Register a student account</p>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
@@ -412,9 +420,9 @@ export default function FacultyStudentsClient() {
                   setCreatedPassword(null);
                   setCopiedPassword(false);
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                className="p-2 hover:bg-gray-200 rounded-xl transition-all"
               >
-                <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+                <FontAwesomeIcon icon={faXmark} className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
@@ -423,28 +431,28 @@ export default function FacultyStudentsClient() {
               className="p-7 space-y-6 overflow-y-auto flex-1 min-h-0"
             >
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Student Name <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-3">
                   <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-400" />
+                        <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-500" />
                       </div>
                       <input
                         type="text"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         placeholder="First name"
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-400 rounded-xl text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/30 focus:border-[#1B6B7B] focus:bg-white transition-all shadow-sm"
                       />
                     </div>
                   </div>
                   <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-400" />
+                        <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-500" />
                       </div>
                       <input
                         type="text"
@@ -452,21 +460,21 @@ export default function FacultyStudentsClient() {
                         onChange={(e) => setMiddleInitial(e.target.value)}
                         placeholder="M.I."
                         maxLength={3}
-                        className="w-full pl-10 pr-3 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                        className="w-full pl-10 pr-3 py-3 bg-white border border-gray-400 rounded-xl text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/30 focus:border-[#1B6B7B] focus:bg-white transition-all shadow-sm"
                       />
                     </div>
                   </div>
                   <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-400" />
+                        <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-500" />
                       </div>
                       <input
                         type="text"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         placeholder="Last name"
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-400 rounded-xl text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/30 focus:border-[#1B6B7B] focus:bg-white transition-all shadow-sm"
                       />
                     </div>
                   </div>
@@ -476,20 +484,20 @@ export default function FacultyStudentsClient() {
               <div>
                 <label
                   htmlFor="new-student-email"
-                  className="block text-sm font-medium text-gray-700 mb-3"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
                 >
                   Student Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 text-gray-400" />
+                    <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 text-gray-500" />
                   </div>
                   <input
                     id="new-student-email"
                     type="text"
                     ref={newEmailRef}
                     placeholder="@batstate-u.edu.ph"
-                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-400 rounded-xl text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/30 focus:border-[#1B6B7B] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -553,9 +561,9 @@ export default function FacultyStudentsClient() {
                     setCreatedPassword(null);
                     setCopiedPassword(false);
                   }}
-                  className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+                  className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-all"
                 >
-                  Close
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -679,53 +687,61 @@ export default function FacultyStudentsClient() {
       {showUpdateModal && updatingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Update Student</h2>
+            <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#1B6B7B]/10 rounded-xl flex items-center justify-center">
+                  <FontAwesomeIcon icon={faUser} className="text-[#1B6B7B] w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Update Student</h2>
+                  <p className="text-sm text-gray-500">Edit student details</p>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowUpdateModal(false);
                   setUpdatingStudent(null);
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                className="p-2 hover:bg-gray-200 rounded-xl transition-all"
               >
-                <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+                <FontAwesomeIcon icon={faXmark} className="w-5 h-5 text-gray-500" />
               </button>
             </div>
             <form onSubmit={handleUpdateStudent} className="p-7 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Student Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-400" />
+                    <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-500" />
                   </div>
                   <input
                     type="text"
                     value={updateName}
                     onChange={(e) => setUpdateName(e.target.value)}
                     placeholder="Full name"
-                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-400 rounded-xl text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/30 focus:border-[#1B6B7B] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
               <div>
                 <label
                   htmlFor="update-student-email"
-                  className="block text-sm font-medium text-gray-700 mb-3"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
                 >
                   Student Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 text-gray-400" />
+                    <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 text-gray-500" />
                   </div>
                   <input
                     id="update-student-email"
                     type="text"
                     ref={updateEmailRef}
                     placeholder="student@example.edu"
-                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/50 focus:border-[#1B6B7B] transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-400 rounded-xl text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1B6B7B]/30 focus:border-[#1B6B7B] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -736,7 +752,7 @@ export default function FacultyStudentsClient() {
                     setShowUpdateModal(false);
                     setUpdatingStudent(null);
                   }}
-                  className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+                  className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-all"
                 >
                   Cancel
                 </button>
@@ -763,16 +779,24 @@ export default function FacultyStudentsClient() {
       {showDeleteModal && deletingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Delete Student</h2>
+            <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                  <FontAwesomeIcon icon={faTrashCan} className="text-red-600 w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Delete Student</h2>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
                   setDeletingStudent(null);
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                className="p-2 hover:bg-gray-200 rounded-xl transition-all"
               >
-                <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+                <FontAwesomeIcon icon={faXmark} className="w-5 h-5 text-gray-500" />
               </button>
             </div>
             <div className="p-7">
@@ -782,14 +806,14 @@ export default function FacultyStudentsClient() {
                 action cannot be undone.
               </p>
             </div>
-            <div className="flex items-center justify-end gap-3 px-7 py-5 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 px-7 py-5 border-t border-gray-100 bg-gray-50/50">
               <button
                 type="button"
                 onClick={() => {
                   setShowDeleteModal(false);
                   setDeletingStudent(null);
                 }}
-                className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+                className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-all"
               >
                 Cancel
               </button>

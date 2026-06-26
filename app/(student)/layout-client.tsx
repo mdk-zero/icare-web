@@ -20,7 +20,7 @@ const navItems: NavItem[] = [
   {
     id: "patients",
     label: "Patients",
-    href: "/dashboard?tab=patients",
+    href: "/patients",
     icon: faFileLines,
   },
   {
@@ -48,7 +48,11 @@ function isActive(item: NavItem, pathname: string, searchParams: URLSearchParams
   if (item.id === "dashboard") {
     return pathname === "/dashboard" && activeTab === "dashboard";
   }
-  return activeTab === item.id;
+  // Patients now has its own dedicated route; other tabs remain on /dashboard.
+  if (item.id === "patients") {
+    return pathname === "/patients";
+  }
+  return pathname === "/dashboard" && activeTab === item.id;
 }
 
 export default function StudentLayoutClient({

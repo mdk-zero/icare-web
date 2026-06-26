@@ -25,11 +25,15 @@ function mirrorToStorage(user: User | null) {
 
 export interface Patient {
   id: string;
+  subject_id?: number;
+  hadm_id?: number;
+  mimic_id?: string;
   name: string;
   age: number;
   gender: string;
   room_number: string;
   diagnosis: string;
+  admission_date?: string;
   vital_signs: {
     heart_rate: number | null;
     blood_pressure: string | null;
@@ -37,6 +41,7 @@ export interface Patient {
     respiratory_rate: number | null;
     oxygen_saturation: number | null;
   };
+  labs?: Record<string, string | number | null>;
   created_by: string;
   created_at: string;
 }
@@ -71,60 +76,6 @@ export interface PerformanceLog {
 }
 
 // Mock Data Generators
-const generateMockPatients = (): Patient[] => [
-  {
-    id: 'patient-001',
-    name: 'Juan Reyes',
-    age: 68,
-    gender: 'M',
-    room_number: 'Room 101',
-    diagnosis: 'Acute Myocardial Infarction',
-    vital_signs: {
-      heart_rate: 98,
-      blood_pressure: '140/90',
-      temperature: 37.2,
-      respiratory_rate: 20,
-      oxygen_saturation: 96,
-    },
-    created_by: 'student-001',
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'patient-002',
-    name: 'Maria Santos',
-    age: 45,
-    gender: 'F',
-    room_number: 'Room 102',
-    diagnosis: 'Type 2 Diabetes',
-    vital_signs: {
-      heart_rate: 72,
-      blood_pressure: '120/80',
-      temperature: 37.0,
-      respiratory_rate: 16,
-      oxygen_saturation: 98,
-    },
-    created_by: 'student-001',
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'patient-003',
-    name: 'Carlos Diaz',
-    age: 55,
-    gender: 'M',
-    room_number: 'Room 103',
-    diagnosis: 'Hypertension',
-    vital_signs: {
-      heart_rate: 85,
-      blood_pressure: '150/95',
-      temperature: 36.8,
-      respiratory_rate: 18,
-      oxygen_saturation: 97,
-    },
-    created_by: 'student-001',
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 const generateMockQuizzes = (): Quiz[] => [
   {
     id: 'quiz-001',
@@ -559,9 +510,25 @@ export async function changePassword(
 }
 
 // Student API Functions
-export async function fetchPatients(): Promise<Patient[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  return generateMockPatients();
+export async function fetchPatients(search?: string, abnormalOnly?: boolean): Promise<Patient[]> {
+  try {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (abnormalOnly) params.set('abnormal_only', 'true');
+    const query = params.toString();
+    const res = await fetch(`/api/patients${query ? `?${query}` : ''}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      console.error('fetchPatients() failed', res.status);
+      return [];
+    }
+    const json = (await res.json()) as { patients: Patient[] };
+    return json.patients ?? [];
+  } catch (err) {
+    console.error('fetchPatients() failed', err);
+    return [];
+  }
 }
 
 export async function fetchQuizzes(): Promise<Quiz[]> {
@@ -970,21 +937,40 @@ export async function createScenario(scenario: Partial<SimulationScenario>): Pro
   return newScenario;
 }
 
-export async function generateAIScenario(prompt: string): Promise<SimulationScenario | null> {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return {
-    id: `scenario-ai-${Date.now()}`,
-    title: 'AI Generated Scenario',
-    description: prompt,
-    difficulty: 'intermediate',
-    category: 'AI Generated',
-    patient_case: { generated_by_ai: true },
-    learning_objectives: ['Complete the scenario', 'Demonstrate clinical skills'],
-    is_ai_generated: true,
-    student_count: 0,
-    created_at: new Date().toISOString(),
-  };
+export async function generateAIScenario(
+  prompt: string,
+  patientId?: string,
+): Promise<SimulationScenario | null> {
+  try {
+    const res = await fetch('/api/faculty/scenarios/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ prompt, patient_id: patientId }),
+    });
+
+    const json = (await res.json()) as { scenario?: Partial<SimulationScenario>; error?: string };
+    if (!res.ok || !json.scenario) {
+      console.error('generateAIScenario() failed', json.error);
+      return null;
+    }
+
+    return {
+      id: `scenario-ai-${Date.now()}`,
+      title: json.scenario.title || 'AI Generated Scenario',
+      description: json.scenario.description || prompt,
+      difficulty: json.scenario.difficulty || 'intermediate',
+      category: json.scenario.category || 'AI Generated',
+      patient_case: json.scenario.patient_case || { generated_by_ai: true },
+      learning_objectives: json.scenario.learning_objectives || ['Demonstrate clinical assessment skills'],
+      is_ai_generated: true,
+      student_count: 0,
+      created_at: new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error('generateAIScenario() failed', err);
+    return null;
+  }
 }
 
 export async function fetchFacultyPatients(search?: string): Promise<FacultyPatient[]> {
