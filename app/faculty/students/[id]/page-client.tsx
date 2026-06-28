@@ -77,7 +77,7 @@ export default function StudentDetailClient() {
     setLoading(false);
   };
 
-  const getRiskColor = (risk: string) => {
+  const getRiskColor = (risk?: string) => {
     switch (risk) {
       case 'high': return 'bg-red-100 text-red-700 border-red-200';
       case 'medium': return 'bg-amber-100 text-amber-700 border-amber-200';
@@ -166,7 +166,9 @@ export default function StudentDetailClient() {
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-xl">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getRiskColor(student.risk_level)}`}>
-                  {student.risk_level.charAt(0).toUpperCase() + student.risk_level.slice(1)} Risk
+                  {student.risk_level
+                    ? student.risk_level.charAt(0).toUpperCase() + student.risk_level.slice(1)
+                    : 'Unknown'} Risk
                 </span>
               </div>
             </div>

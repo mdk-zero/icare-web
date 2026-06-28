@@ -588,7 +588,7 @@ export interface FacultyStudent {
   year: number;
   average_score: number;
   quiz_count: number;
-  risk_level: 'low' | 'medium' | 'high';
+  risk_level?: 'low' | 'medium' | 'high';
   last_activity: string;
 }
 

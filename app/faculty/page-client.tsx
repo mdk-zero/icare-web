@@ -51,7 +51,7 @@ export default function FacultyDashboard() {
     loadDashboardData();
   }, []);
 
-  const getRiskColor = (risk: string) => {
+  const getRiskColor = (risk?: string) => {
     switch (risk) {
       case 'high': return 'bg-red-100 text-red-700 border-red-200';
       case 'medium': return 'bg-amber-100 text-amber-700 border-amber-200';
@@ -192,7 +192,9 @@ export default function FacultyDashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getRiskColor(student.risk_level)}`}>
-                      {student.risk_level.charAt(0).toUpperCase() + student.risk_level.slice(1)} Risk
+                      {student.risk_level
+                        ? student.risk_level.charAt(0).toUpperCase() + student.risk_level.slice(1)
+                        : 'Unknown'} Risk
                     </span>
                     <span className="text-xs text-gray-400">{student.last_activity}</span>
                   </div>

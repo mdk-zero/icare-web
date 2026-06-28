@@ -1409,10 +1409,12 @@ export default function FacultyScenariosClient() {
                                     ? "bg-red-100 text-red-700"
                                     : student.risk_level === "medium"
                                     ? "bg-amber-100 text-amber-700"
-                                    : "bg-emerald-100 text-emerald-700"
+                                    : student.risk_level === "low"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-gray-100 text-gray-700"
                                 }`}
                               >
-                                {student.risk_level}
+                                {student.risk_level ? student.risk_level : "Unknown"}
                               </span>
                             </td>
                           </tr>
