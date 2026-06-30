@@ -76,6 +76,7 @@ create table if not exists public.patients (
   admission_date timestamptz,
   vital_signs jsonb not null default '{}'::jsonb,
   labs jsonb not null default '{}'::jsonb,
+  medical_history text,
   mimic_id text not null,
   created_by uuid references public.users(id) on delete set null,
   created_at timestamptz not null default now(),

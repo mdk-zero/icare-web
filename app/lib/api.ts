@@ -42,6 +42,7 @@ export interface Patient {
     oxygen_saturation: number | null;
   };
   labs?: Record<string, string | number | null>;
+  medical_history?: string | null;
   created_by: string;
   created_at: string;
 }
@@ -683,14 +684,14 @@ export interface FacultyPatient {
   room_number: string;
   diagnosis: string;
   admission_date: string;
-  vital_signs: {
+  vital_signs?: {
     heart_rate: number | null;
     blood_pressure: string | null;
     temperature: number | null;
     respiratory_rate: number | null;
     oxygen_saturation: number | null;
   };
-  labs: Record<string, string | number | null>;
+  labs?: Record<string, string | number | null>;
   mimic_id: string;
 }
 

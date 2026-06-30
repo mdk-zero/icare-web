@@ -35,9 +35,10 @@ export async function GET() {
     const { data: scenarios, error } = await supabase
       .from('scenarios')
       .select(
-        'id, created_by, title, description, difficulty, category, patient_case, learning_objectives, is_ai_generated, created_at, updated_at, scenario_assignments(count)',
+        'id, created_by, title, description, difficulty, category, learning_objectives, is_ai_generated, created_at, updated_at, scenario_assignments(count)',
       )
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(500);
 
     if (error) {
       console.error('Failed to fetch scenarios', error);
@@ -54,7 +55,6 @@ export async function GET() {
       description: s.description,
       difficulty: s.difficulty,
       category: s.category,
-      patient_case: s.patient_case,
       learning_objectives: Array.isArray(s.learning_objectives) ? s.learning_objectives : [],
       is_ai_generated: s.is_ai_generated,
       created_at: s.created_at,

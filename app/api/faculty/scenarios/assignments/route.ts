@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
         const { data: allStudents, error: studentsError } = await supabase
           .from('users')
           .select('id')
-          .eq('role', 'student');
+          .eq('role', 'student')
+          .limit(2000);
 
         if (studentsError) {
           console.error('Failed to fetch students', studentsError);
@@ -63,7 +64,8 @@ export async function GET(request: NextRequest) {
       .from('scenario_assignments')
       .select('id, scenario_id, student_id, assigned_at, deadline, status, required, score, completed_at, time_taken')
       .in('student_id', studentIds)
-      .order('assigned_at', { ascending: false });
+      .order('assigned_at', { ascending: false })
+      .limit(2000);
 
     if (assignmentsError) {
       console.error('Failed to fetch assignments', assignmentsError);

@@ -5,6 +5,14 @@ interface RateLimitEntry {
 
 const store = new Map<string, RateLimitEntry>();
 
+// Sweep expired entries every 5 minutes so the map doesn't grow unboundedly.
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of store) {
+    if (now >= entry.resetAt) store.delete(key);
+  }
+}, 5 * 60 * 1000).unref();
+
 export function checkRateLimit(
   key: string,
   maxRequests: number,

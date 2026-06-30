@@ -17,8 +17,9 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseAdmin();
     let query = supabase
       .from('patients')
-      .select('*')
-      .order('admission_date', { ascending: false });
+      .select('id, subject_id, hadm_id, name, age, gender, room_number, diagnosis, admission_date, vital_signs, labs, mimic_id, medical_history, created_by, created_at')
+      .order('admission_date', { ascending: false })
+      .limit(500);
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,diagnosis.ilike.%${search}%,mimic_id.ilike.%${search}%`);

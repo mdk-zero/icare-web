@@ -17,6 +17,7 @@ interface PatientContext {
   vital_signs: Record<string, unknown>;
   labs: Record<string, unknown>;
   mimic_id: string;
+  medical_history: string | null;
 }
 
 function invalidSessionResponse() {
@@ -40,7 +41,7 @@ Use the following MIMIC-IV patient record as the basis for the scenario:
 - Admission Date: ${patient.admission_date}
 - Vital Signs: ${JSON.stringify(patient.vital_signs, null, 2)}
 - Labs: ${JSON.stringify(patient.labs, null, 2)}
-- MIMIC ID: ${patient.mimic_id}
+- MIMIC ID: ${patient.mimic_id}${patient.medical_history ? `\n- Medical History: ${patient.medical_history}` : ''}
 `
     : '';
 
@@ -77,13 +78,14 @@ Guidelines:
 - If a patient record is provided, base vitals/diagnosis on it but craft a coherent teaching case.
 - Difficulty should match clinical complexity.
 - Learning objectives must be measurable and nursing-focused.
-- Keep the scenario clinically plausible and safe for educational use.`;
+- Keep the scenario clinically plausible and safe for educational use.
+- Treat this as the patient's first recorded encounter: medical_history must describe only pre-existing background (chronic conditions, current medications, allergies, prior surgeries before this admission) — do not reference any previous hospital visits, prior scenarios, or prior nursing encounters in the system.`;
 }
 
 async function fetchPatient(supabase: ReturnType<typeof getSupabaseAdmin>, patientId: string): Promise<PatientContext | null> {
   const { data, error } = await supabase
     .from('patients')
-    .select('name, age, gender, room_number, diagnosis, admission_date, vital_signs, labs, mimic_id')
+    .select('name, age, gender, room_number, diagnosis, admission_date, vital_signs, labs, mimic_id, medical_history')
     .eq('id', patientId)
     .maybeSingle();
 

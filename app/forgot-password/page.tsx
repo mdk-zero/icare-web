@@ -16,7 +16,7 @@ function MedicalCross({ className }: { className?: string }) {
 }
 
 export default function ForgotPasswordPage() {
-  const [step, setStep] = useState<"email" | "reset" | "success">("email");
+  const [step, setStep] = useState<"email" | "code" | "reset" | "success">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -54,6 +54,34 @@ export default function ForgotPasswordPage() {
       }
 
       setMessage(data.message ?? "If this account exists, a reset code has been sent.");
+      setStep("code");
+    } catch {
+      setError("Connection error. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password/check-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        setError(data.error ?? "Invalid or expired reset code.");
+        setIsLoading(false);
+        return;
+      }
+
       setStep("reset");
     } catch {
       setError("Connection error. Please try again.");
@@ -165,6 +193,10 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-[#64748B]">
                 {step === "success"
                   ? "You can now sign in with your new password."
+                  : step === "code"
+                  ? "Enter the 6-digit code sent to your email."
+                  : step === "reset"
+                  ? "Choose a new password for your account."
                   : "Enter your email and we'll send you a reset code."}
               </p>
             </div>
@@ -186,7 +218,7 @@ export default function ForgotPasswordPage() {
               </div>
             )}
 
-            {message && step === "reset" && (
+            {message && step === "code" && (
               <div className="p-3.5 mb-5 bg-[#F0F9FA] border border-[#D0EBEA] rounded-xl text-[#0F4C5C] text-sm">
                 {message}
               </div>
@@ -260,8 +292,8 @@ export default function ForgotPasswordPage() {
               </form>
             )}
 
-            {step === "reset" && (
-              <form onSubmit={handleResetPassword} className="space-y-4">
+            {step === "code" && (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
                 <div>
                   <label htmlFor="otp" className="block text-sm font-medium text-[#334155] mb-1.5">
                     Reset Code <span className="text-red-500">*</span>
@@ -274,11 +306,45 @@ export default function ForgotPasswordPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                     required
+                    autoFocus
                     className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D7377]/20 focus:border-[#0D7377] transition-all tracking-[0.2em] text-center font-medium"
                     placeholder="000000"
                   />
                 </div>
 
+                <button
+                  type="submit"
+                  disabled={isLoading || otp.length < 6}
+                  className="w-full bg-[#0D7377] hover:bg-[#0A5C5F] text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 shadow-lg shadow-[#0D7377]/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Verifying...
+                    </>
+                  ) : (
+                    "Verify code"
+                  )}
+                </button>
+              </form>
+            )}
+
+            {step === "reset" && (
+              <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
                   <label
                     htmlFor="newPassword"
@@ -308,6 +374,7 @@ export default function ForgotPasswordPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
+                      autoFocus
                       minLength={8}
                       className="w-full pl-11 pr-11 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D7377]/20 focus:border-[#0D7377] transition-all"
                       placeholder="At least 8 characters"
@@ -432,7 +499,7 @@ export default function ForgotPasswordPage() {
               </div>
             )}
 
-            {step !== "success" && (
+            {step !== "success" && step !== "reset" && (
               <div className="mt-5 text-center">
                 <Link
                   href="/login"
